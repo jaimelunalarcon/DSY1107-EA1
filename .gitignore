@@ -1,0 +1,57 @@
+# =========================
+# macOS
+# =========================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Spotlight
+.Spotlight-V100
+
+# Papelera
+.Trashes
+
+# Finder
+Icon?
+
+# =========================
+# Terraform
+# =========================
+
+# Directorio local de Terraform
+.terraform/
+
+# State de Terraform
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Variables que podrían contener secretos
+*.tfvars
+*.tfvars.json
+
+# Archivos override locales
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Planes generados
+*.tfplan
+
+# =========================
+# Editores
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# Temporales
+# =========================
+*.swp
+*.swo
+*~
