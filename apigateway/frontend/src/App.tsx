@@ -1,4 +1,3 @@
-import { useAuth } from "react-oidc-context";
 import type { ReactNode } from "react";
 import { Button } from "./components/button";
 import { Container } from "./components/container";
@@ -6,6 +5,7 @@ import { Footer } from "./components/footer";
 import { Gradient, GradientBackground } from "./components/gradient";
 import { Navbar } from "./components/navbar";
 import { ApiTestPanel } from "./components/api-test-panel";
+import { useAuth } from "./auth/AuthContext.tsx";
 
 function AuthScreen({
   title,
@@ -27,7 +27,7 @@ function AuthScreen({
             <div className="mt-8">{children}</div>
           </div>
           <div className="m-1.5 rounded-lg bg-gray-50 py-4 text-center text-sm/5 ring-1 ring-black/5">
-            Acceso con Amazon Cognito · OIDC
+            Acceso con Amazon Cognito · OIDC + PKCE
           </div>
         </div>
       </div>
@@ -36,8 +36,8 @@ function AuthScreen({
 }
 
 function SignedInApp() {
-  const auth = useAuth();
-  const email = auth.user?.profile.email ?? "cuenta autenticada";
+  const { tokens, logout } = useAuth();
+  const email = tokens?.email ?? "cuenta autenticada";
 
   return (
     <div className="overflow-hidden">
@@ -51,9 +51,7 @@ function SignedInApp() {
               </span>
             }
             actions={
-              <Button onClick={() => auth.removeUser()}>
-                Cerrar sesión
-              </Button>
+              <Button onClick={logout}>Cerrar sesión</Button>
             }
           />
           <div className="pt-8 pb-12 sm:pt-12 sm:pb-16 md:pt-16 md:pb-24">
@@ -67,7 +65,8 @@ function SignedInApp() {
         </Container>
       </div>
 
-      <ApiTestPanel user={auth.user} />
+      {/* PASOS 10 y 11 — llamar APIs con el access token */}
+      <ApiTestPanel accessToken={tokens?.accessToken} />
 
       <Footer />
     </div>
@@ -75,13 +74,13 @@ function SignedInApp() {
 }
 
 function App() {
-  const auth = useAuth();
+  const { status, error, login } = useAuth();
 
-  if (auth.isLoading) {
+  if (status === "loading") {
     return (
       <AuthScreen
         title="Cargando..."
-        description="Validando la sesión con Amazon Cognito."
+        description="Procesando el callback de Cognito (pasos 6 a 9) o restaurando la sesión."
       >
         <div className="h-2 overflow-hidden rounded-full bg-gray-100">
           <div className="h-full w-1/2 animate-pulse rounded-full bg-gray-950" />
@@ -90,29 +89,30 @@ function App() {
     );
   }
 
-  if (auth.error) {
+  if (error) {
     return (
       <AuthScreen
         title="No se pudo iniciar sesión"
-        description={auth.error.message}
+        description={error}
       >
-        <Button className="w-full" onClick={() => auth.signinRedirect()}>
+        <Button className="w-full" onClick={() => void login()}>
           Reintentar con Cognito
         </Button>
       </AuthScreen>
     );
   }
 
-  if (auth.isAuthenticated) {
+  if (status === "authenticated") {
     return <SignedInApp />;
   }
 
   return (
     <AuthScreen
       title="Welcome back!"
-      description="Inicia sesión con Amazon Cognito para continuar."
+      description="Inicia sesión con Amazon Cognito (Authorization Code + PKCE)."
     >
-      <Button className="w-full" onClick={() => auth.signinRedirect()}>
+      {/* PASO 1 — el usuario hace clic en Login */}
+      <Button className="w-full" onClick={() => void login()}>
         Iniciar sesión con Cognito
       </Button>
     </AuthScreen>

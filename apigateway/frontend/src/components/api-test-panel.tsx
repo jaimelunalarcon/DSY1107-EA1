@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { clsx } from "clsx";
-import type { User } from "oidc-client-ts";
 import { apiConfig, cognitoConfig } from "../config.ts";
 import { Button } from "./button";
 import { Container } from "./container";
@@ -13,7 +12,7 @@ type ApiResult = {
 };
 
 type ApiTestPanelProps = {
-  user: User | null | undefined;
+  accessToken: string | undefined;
 };
 
 async function readResponse(res: Response) {
@@ -25,11 +24,9 @@ async function readResponse(res: Response) {
   }
 }
 
-export function ApiTestPanel({ user }: ApiTestPanelProps) {
+export function ApiTestPanel({ accessToken }: ApiTestPanelProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [result, setResult] = useState<ApiResult | null>(null);
-
-  const accessToken = user?.access_token;
 
   async function runTest(
     label: string,
@@ -95,6 +92,8 @@ export function ApiTestPanel({ user }: ApiTestPanelProps) {
       label: "/datos con token",
       variant: "primary" as const,
       disabled: !accessToken,
+      // PASO 10 — Request a Your API (API Gateway) con Access Token
+      // PASO 11 — la respuesta HTTP se muestra debajo
       action: () =>
         runTest("/datos con token", () =>
           fetch(`${apiConfig.baseUrl}/datos`, {
