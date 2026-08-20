@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Logo } from "./logo";
 import { PlusGrid, PlusGridItem, PlusGridRow } from "./plus-grid";
 
 type NavbarProps = {
@@ -9,15 +8,12 @@ type NavbarProps = {
 
 export function Navbar({ banner, actions }: NavbarProps) {
   return (
-    <header className="pt-12 sm:pt-16">
+    <header className="pt-6 sm:pt-8">
       <PlusGrid>
         <PlusGridRow className="relative flex justify-between">
-          <div className="relative flex gap-6">
-            <PlusGridItem className="py-3">
-              <Logo className="h-9" />
-            </PlusGridItem>
+          <div className="relative flex flex-1 gap-6">
             {banner ? (
-              <div className="relative hidden items-center py-3 lg:flex">
+              <div className="relative flex items-center py-3">
                 {banner}
               </div>
             ) : null}

@@ -1,41 +1,7 @@
 import type { ReactNode, SVGProps } from "react";
-import { Button } from "./button";
 import { Container } from "./container";
 import { Gradient } from "./gradient";
-import { Logo } from "./logo";
 import { PlusGrid, PlusGridItem, PlusGridRow } from "./plus-grid";
-import { Subheading } from "./text";
-
-function CallToAction({
-  onAction,
-  actionLabel,
-}: {
-  onAction?: () => void;
-  actionLabel?: string;
-}) {
-  return (
-    <div className="relative pt-20 pb-16 text-center sm:py-24">
-      <hgroup>
-        <Subheading>Get started</Subheading>
-        <p className="mt-6 text-3xl font-medium tracking-tight text-gray-950 sm:text-5xl">
-          Ready to dive in?
-          <br />
-          Continúa con Amazon Cognito.
-        </p>
-      </hgroup>
-      <p className="mx-auto mt-6 max-w-xs text-sm/6 text-gray-500">
-        Acceso protegido con OIDC. Tu sesión usa el flujo Authorization Code.
-      </p>
-      {onAction && actionLabel ? (
-        <div className="mt-6">
-          <Button className="w-full sm:w-auto" onClick={onAction}>
-            {actionLabel}
-          </Button>
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
 function SitemapHeading({ children }: { children: ReactNode }) {
   return <h3 className="text-sm/6 font-medium text-gray-950/50">{children}</h3>;
@@ -122,36 +88,23 @@ function SocialLinks() {
   );
 }
 
-type FooterProps = {
-  onAction?: () => void;
-  actionLabel?: string;
-};
-
-export function Footer({ onAction, actionLabel }: FooterProps) {
+export function Footer() {
   return (
     <footer>
       <Gradient className="relative">
         <div className="absolute inset-2 rounded-4xl bg-white/80" />
         <Container>
-          <CallToAction onAction={onAction} actionLabel={actionLabel} />
-          <PlusGrid className="pb-16">
+          <PlusGrid className="pb-16 pt-6">
             <PlusGridRow>
-              <div className="grid grid-cols-2 gap-y-10 pb-6 lg:grid-cols-6 lg:gap-8">
-                <div className="col-span-2 flex">
-                  <PlusGridItem className="pt-6 lg:pb-6">
-                    <Logo className="h-9" />
-                  </PlusGridItem>
-                </div>
-                <div className="col-span-2 grid grid-cols-2 gap-x-8 gap-y-12 lg:col-span-4 lg:grid-cols-subgrid lg:pt-6">
-                  <Sitemap />
-                </div>
+              <div className="grid grid-cols-2 gap-y-10 pb-6 lg:grid-cols-4 lg:gap-8 lg:pt-6">
+                <Sitemap />
               </div>
             </PlusGridRow>
             <PlusGridRow className="flex justify-between">
               <div>
                 <PlusGridItem className="py-3">
                   <div className="text-sm/6 text-gray-950">
-                    &copy; {new Date().getFullYear()} Radiant Inc.
+                    &copy; {new Date().getFullYear()} DSY1107
                   </div>
                 </PlusGridItem>
               </div>

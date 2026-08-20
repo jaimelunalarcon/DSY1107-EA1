@@ -21,6 +21,12 @@ const variants = {
     "text-sm font-medium whitespace-nowrap text-gray-950",
     "disabled:bg-transparent disabled:opacity-40 hover:bg-gray-50",
   ),
+  danger: clsx(
+    "inline-flex items-center justify-center px-4 py-[calc(--spacing(2)-1px)]",
+    "rounded-full border border-transparent bg-red-600 shadow-md",
+    "text-base font-medium whitespace-nowrap text-white",
+    "disabled:bg-red-600 disabled:opacity-40 hover:bg-red-500",
+  ),
 };
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
