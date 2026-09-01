@@ -6,16 +6,12 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/backend_compile.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend_compile.yml'
-
-permissions:
-  contents: read
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Compilar y probar. Corre siempre, tambien en pull requests: es la red que
+  # impide que llegue a main algo que no compila.
+  # ---------------------------------------------------------------------------
   construir:
     name: Build y pruebas
     runs-on: ubuntu-latest
@@ -25,15 +21,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verificar backend
-        run: |
-          if [ ! -f backend/pom.xml ]; then
-            echo "::notice::No hay carpeta backend/ en este repo; workflow omitido."
-            exit 0
-          fi
-
+      # java.version del pom es 21 (debe coincidir con la imagen base del
+      # Dockerfile y con el runtime_platform de fargate.tf). Si ahi cambia,
+      # cambia aqui.
       - name: Java 21
-        if: hashFiles('backend/pom.xml') != ''
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -41,6 +32,5 @@ jobs:
           cache: maven
 
       - name: Build y pruebas
-        if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
         run: ./mvnw --batch-mode --no-transfer-progress package -DskipTests
