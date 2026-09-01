@@ -6,6 +6,7 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend_compile.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,8 +16,6 @@ jobs:
     name: Frontend
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      RUTA_BUILD: frontend/dist/frontend/browser
 
     steps:
       - name: Checkout
