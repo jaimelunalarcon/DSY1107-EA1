@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'frontend/**'
+      - 'scripts/**'
       - '.github/workflows/frontend_deploy.yml'
 
 permissions:
@@ -16,7 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      RUTA_BUILD: frontend/dist/frontend/browser
+      # Vite genera frontend/dist (la plantilla Angular usa dist/frontend/browser).
+      RUTA_BUILD: frontend/dist
 
     steps:
       - name: Checkout
@@ -29,15 +31,20 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Generar config.json
+      - name: Generar config.ts
         env:
           REGION: ${{ vars.AWS_REGION }}
+          USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
           COGNITO_DOMAIN: ${{ vars.COGNITO_DOMAIN }}
           CLIENT_ID: ${{ vars.COGNITO_CLIENT_ID }}
-          REDIRECT_URI: ${{ vars.REDIRECT_URI }}
           API_URL: ${{ vars.API_URL }}
-          EXIGIR_HTTPS: '1'
-        run: scripts/config-frontend.sh
+        run: |
+          if [ -z "$CLIENT_ID" ]; then
+            echo "::warning::Variables de GitHub no configuradas; se usa frontend/src/config.ts del repo."
+            echo "Ejecuta localmente: ./sincronizar-github.sh (tras terraform apply)"
+            exit 0
+          fi
+          scripts/config-frontend.sh
 
       - name: Instalar dependencias
         working-directory: frontend
@@ -54,15 +61,16 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Publicar en Amplify
         if: github.event_name != 'pull_request'
         env:
           APP_ID: ${{ vars.AMPLIFY_APP_ID }}
-          RAMA: ${{ vars.AMPLIFY_BRANCH || 'main' }}
+          RAMA: ${{ vars.AMPLIFY_BRANCH }}
           DESTINO: ${{ vars.REDIRECT_URI }}
         run: |
-          [ -n "$APP_ID" ] || { echo "::error::Falta la variable AMPLIFY_APP_ID. Ejecuta ./sincronizar-github.sh"; exit 1; }
+          RAMA="${RAMA:-main}"
+          [ -n "$APP_ID" ] || { echo "::error::Falta AMPLIFY_APP_ID. Ejecuta ./sincronizar-github.sh"; exit 1; }
           scripts/publicar-amplify.sh "$APP_ID" "$RAMA" "$RUTA_BUILD"
           echo "### Front publicado en ${DESTINO%/}" >> "$GITHUB_STEP_SUMMARY"
