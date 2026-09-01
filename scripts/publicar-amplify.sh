@@ -17,8 +17,14 @@ if [ ! -d "$BUILD_DIR" ]; then
   exit 1
 fi
 
-ZIP_FILE="$(mktemp -t amplify-dist.XXXXXX.zip)"
-trap 'rm -f "$ZIP_FILE"' EXIT
+TMP_DIR="$(mktemp -d)"
+ZIP_FILE="$TMP_DIR/amplify-dist.zip"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+if [ ! -f "$BUILD_DIR/index.html" ]; then
+  echo "::error::Build incompleto: falta $BUILD_DIR/index.html" >&2
+  exit 1
+fi
 
 echo "Empaquetando $BUILD_DIR..."
 (cd "$BUILD_DIR" && zip -qr "$ZIP_FILE" .)
