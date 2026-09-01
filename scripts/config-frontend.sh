@@ -5,11 +5,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CONFIG_FILE="${1:-$ROOT/frontend/src/config.ts}"
 
-: "${REGION:?Falta REGION}"
-: "${COGNITO_DOMAIN:?Falta COGNITO_DOMAIN}"
-: "${CLIENT_ID:?Falta CLIENT_ID}"
-: "${API_URL:?Falta API_URL}"
-: "${USER_POOL_ID:?Falta USER_POOL_ID}"
+: "${REGION:?Falta REGION (variable GitHub: AWS_REGION)}"
+: "${COGNITO_DOMAIN:?Falta COGNITO_DOMAIN (variable GitHub: COGNITO_DOMAIN)}"
+: "${CLIENT_ID:?Falta CLIENT_ID (variable GitHub: COGNITO_CLIENT_ID)}"
+: "${API_URL:?Falta API_URL (variable GitHub: API_URL)}"
+: "${USER_POOL_ID:?Falta USER_POOL_ID (variable GitHub: COGNITO_USER_POOL_ID)}"
 
 DOMAIN="${COGNITO_DOMAIN#https://}"
 DOMAIN_URL="https://${DOMAIN}"

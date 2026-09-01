@@ -38,7 +38,13 @@ jobs:
           COGNITO_DOMAIN: ${{ vars.COGNITO_DOMAIN }}
           CLIENT_ID: ${{ vars.COGNITO_CLIENT_ID }}
           API_URL: ${{ vars.API_URL }}
-        run: scripts/config-frontend.sh
+        run: |
+          if [ -z "$CLIENT_ID" ]; then
+            echo "::warning::Variables de GitHub no configuradas; se usa frontend/src/config.ts del repo."
+            echo "Ejecuta localmente: ./sincronizar-github.sh (tras terraform apply)"
+            exit 0
+          fi
+          scripts/config-frontend.sh
 
       - name: Instalar dependencias
         working-directory: frontend
@@ -54,7 +60,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Publicar en Amplify
         env:
