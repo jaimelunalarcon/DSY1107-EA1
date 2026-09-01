@@ -15,8 +15,6 @@ jobs:
     name: Frontend
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      RUTA_BUILD: frontend/dist/frontend/browser
 
     steps:
       - name: Checkout

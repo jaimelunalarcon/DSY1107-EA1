@@ -14,3 +14,7 @@ output "cognito_client_id" {
 output "cognito_domain" {
   value = "${aws_cognito_user_pool_domain.hosted_ui.domain}.auth.${data.aws_region.current.name}.amazoncognito.com"
 }
+
+output "aws_region" {
+  value = data.aws_region.current.name
+}

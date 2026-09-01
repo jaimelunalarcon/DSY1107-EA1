@@ -55,22 +55,18 @@ Infraestructura provisionada con **Terraform** (región `us-east-1`).
 
 ```
 DSY1107-EA1/
-├── .gitignore
-└── apigateway/
-    ├── terraform/          # Infra AWS
-    │   ├── version.tf
-    │   ├── cognito.tf
-    │   ├── api_gateway.tf
-    │   ├── main.tf         # integración, rutas, authorizer, stages
-    │   └── outputs.tf
-    └── frontend/           # SPA
-        ├── src/
-        │   ├── auth/       # PKCE + Cognito + AuthContext
-        │   ├── components/
-        │   ├── App.tsx
-        │   ├── config.ts   # IDs/URLs (actualizar tras cada apply)
-        │   └── main.tsx
-        └── package.json
+├── .github/workflows/    # CI: compile + deploy Amplify
+├── frontend/             # SPA React (Vite)
+│   ├── src/
+│   │   ├── auth/         # PKCE + Cognito + AuthContext
+│   │   ├── components/
+│   │   ├── App.tsx
+│   │   ├── config.ts     # IDs/URLs (local o generado en CI)
+│   │   └── main.tsx
+│   └── package.json
+├── scripts/              # config-frontend.sh, publicar-amplify.sh
+├── terraform/            # Infra AWS (Cognito, API GW, Amplify)
+└── sincronizar-github.sh # Volcar outputs de Terraform a vars de GitHub
 ```
 
 ---
@@ -103,7 +99,7 @@ El login sigue el diagrama estándar de Authorization Code + PKCE (equivalente a
 | `GET /datos` | JWT (Cognito) | **200** con token válido; **401** sin token |
 | `GET /publico/datos` | Ninguna | **200** (proxy a mindicador) |
 
-CORS habilitado para `http://localhost:5173`.
+CORS habilitado para `http://localhost:5173` y la URL de Amplify (tras `terraform apply`).
 
 La SPA incluye un panel de pruebas con botones:
 
@@ -124,7 +120,7 @@ Cada uno muestra status HTTP y el JSON de respuesta.
 Requiere credenciales AWS válidas (en AWS Academy: las del Learner Lab).
 
 ```bash
-cd apigateway/terraform
+cd terraform
 terraform init
 terraform apply
 terraform output
@@ -132,14 +128,25 @@ terraform output
 
 ### 2. Actualizar el frontend
 
-Copia los outputs a `apigateway/frontend/src/config.ts`:
+Copia los outputs a `frontend/src/config.ts`:
 
 - `cognito_user_pool_id` → `authority`
 - `cognito_client_id` → `clientId`
 - `cognito_domain` → `domain` (con `https://`)
 - `api_base_url` → `apiConfig.baseUrl`
 
-`redirect_uri` debe ser exactamente `http://localhost:5173/` (barra final incluida).
+`redirectUri` usa `window.location.origin` (local o Amplify). Debe existir en los `callback_urls` de Cognito.
+
+O genera el archivo con:
+
+```bash
+export REGION="$(terraform -chdir=terraform output -raw aws_region)"
+export USER_POOL_ID="$(terraform -chdir=terraform output -raw cognito_user_pool_id)"
+export CLIENT_ID="$(terraform -chdir=terraform output -raw cognito_client_id)"
+export COGNITO_DOMAIN="$(terraform -chdir=terraform output -raw cognito_domain)"
+export API_URL="$(terraform -chdir=terraform output -raw api_base_url)"
+./scripts/config-frontend.sh
+```
 
 ### 3. Usuario en Cognito
 
@@ -152,7 +159,7 @@ Como el pool solo permite creación por admin:
 ### 4. SPA
 
 ```bash
-cd apigateway/frontend
+cd frontend
 npm install
 npm run dev
 ```
@@ -183,6 +190,28 @@ El código de la app no cambia; solo los identificadores de AWS.
 - [x] SPA React con UI de login y sesión
 - [x] Authorization Code + PKCE **manual** (sin `react-oidc-context`)
 - [x] Panel para consumir APIs con / sin token
+- [x] Terraform: Amplify (deploy manual / CI)
+- [x] GitHub Actions: compile + deploy a Amplify
+
+---
+
+## Deploy en Amplify (CI)
+
+Tras `terraform apply`, sincroniza variables de GitHub:
+
+```bash
+./sincronizar-github.sh
+```
+
+Configura los secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` y `AWS_SESSION_TOKEN` (Academy) en el repositorio.
+
+Deploy local del build:
+
+```bash
+cd frontend && npm run build
+APP_ID="$(terraform -chdir=terraform output -raw amplify_app_id)"
+./scripts/publicar-amplify.sh "$APP_ID" main frontend/dist
+```
 
 ---
 
@@ -190,13 +219,13 @@ El código de la app no cambia; solo los identificadores de AWS.
 
 ```bash
 # Infra
-cd apigateway/terraform && terraform plan
-cd apigateway/terraform && terraform apply
-cd apigateway/terraform && terraform output
+cd terraform && terraform plan
+cd terraform && terraform apply
+cd terraform && terraform output
 
 # Frontend
-cd apigateway/frontend && npm run dev
-cd apigateway/frontend && npm run build
+cd frontend && npm run dev
+cd frontend && npm run build
 ```
 
 ---
