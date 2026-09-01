@@ -5,7 +5,10 @@ resource "aws_apigatewayv2_api" "api_manager" {
   cors_configuration {
     allow_headers = ["authorization", "content-type"]
     allow_methods = ["GET", "OPTIONS"]
-    allow_origins = ["http://localhost:5173"]
+    allow_origins = [
+      "http://localhost:5173",
+      local.url_amplify,
+    ]
     max_age       = 300
   }
 }
