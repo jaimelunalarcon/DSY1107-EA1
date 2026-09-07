@@ -1,49 +1,63 @@
 #!/usr/bin/env bash
-# Empaqueta el build estático y lo publica en Amplify (create-deployment + upload + start).
+# =============================================================================
+#
+#   Uso: publicar-amplify.sh <app-id> <rama> <directorio-compilado>
+#
+# Devuelve 0 solo si Amplify reporta SUCCEED.
+# =============================================================================
+
 set -euo pipefail
 
-APP_ID="${1:?Uso: publicar-amplify.sh <app_id> [rama] <directorio_build>}"
-BRANCH="${2:-main}"
-BUILD_DIR="${3:-}"
+APP_ID="${1:?Falta el app-id de Amplify}"
+RAMA="${2:?Falta la rama}"
+DIRECTORIO="${3:?Falta el directorio compilado}"
 
-# Si solo hay 2 args, el segundo es el directorio (rama = main).
-if [ -z "$BUILD_DIR" ]; then
-  BUILD_DIR="$BRANCH"
-  BRANCH="main"
-fi
+INTENTOS="${INTENTOS:-60}"
+ESPERA="${ESPERA:-5}"
 
-if [ ! -d "$BUILD_DIR" ]; then
-  echo "::error::No existe el directorio de build: $BUILD_DIR" >&2
-  exit 1
-fi
+for h in aws jq zip curl; do
+  command -v "$h" >/dev/null 2>&1 || { echo "Falta '$h' en el PATH." >&2; exit 1; }
+done
 
-TMP_DIR="$(mktemp -d)"
-ZIP_FILE="$TMP_DIR/amplify-dist.zip"
-trap 'rm -rf "$TMP_DIR"' EXIT
+# Se valida lo que se va a publicar, no lo que se cree que se compilo.
+[[ -f "$DIRECTORIO/index.html" ]] \
+  || { echo "No existe $DIRECTORIO/index.html" >&2; exit 1; }
+[[ -f "$DIRECTORIO/config.json" ]] \
+  || { echo "config.json no llego al bundle (revisa 'assets' en angular.json)" >&2; exit 1; }
 
-if [ ! -f "$BUILD_DIR/index.html" ]; then
-  echo "::error::Build incompleto: falta $BUILD_DIR/index.html" >&2
-  exit 1
-fi
+ZIP="$(mktemp -t amplify-XXXXXX).zip"
+limpiar() { rm -f "$ZIP"; }
+trap limpiar EXIT
 
-echo "Empaquetando $BUILD_DIR..."
-(cd "$BUILD_DIR" && zip -qr "$ZIP_FILE" .)
+# Se comprime el CONTENIDO del directorio: index.html tiene que quedar en la
+# raiz del zip o Amplify sirve un 404. El .example no se publica.
+( cd "$DIRECTORIO" && zip -qr "$ZIP" . -x 'config.example.json' )
+echo "Empaquetado: $(du -h "$ZIP" | cut -f1)"
 
-echo "Creando deployment en Amplify (app=$APP_ID, branch=$BRANCH)..."
-CREATE_JSON="$(aws amplify create-deployment \
-  --app-id "$APP_ID" \
-  --branch-name "$BRANCH" \
-  --output json)"
+despliegue="$(aws amplify create-deployment \
+  --app-id "$APP_ID" --branch-name "$RAMA" --output json)"
+job="$(jq -r '.jobId' <<< "$despliegue")"
+subida="$(jq -r '.zipUploadUrl' <<< "$despliegue")"
 
-JOB_ID="$(echo "$CREATE_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['jobId'])")"
-UPLOAD_URL="$(echo "$CREATE_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['zipUploadUrl'])")"
-
-echo "Subiendo artefacto (job $JOB_ID)..."
-curl -fsS -X PUT -T "$ZIP_FILE" "$UPLOAD_URL"
-
+curl -sS --fail-with-body -X PUT -T "$ZIP" "$subida" > /dev/null
 aws amplify start-deployment \
-  --app-id "$APP_ID" \
-  --branch-name "$BRANCH" \
-  --job-id "$JOB_ID"
+  --app-id "$APP_ID" --branch-name "$RAMA" --job-id "$job" > /dev/null
+echo "Job $job enviado"
 
-echo "Deploy iniciado. Job: $JOB_ID"
+estado=PENDING
+for _ in $(seq 1 "$INTENTOS"); do
+  estado="$(aws amplify get-job --app-id "$APP_ID" --branch-name "$RAMA" \
+            --job-id "$job" --query 'job.summary.status' --output text)"
+  case "$estado" in
+    SUCCEED)          break ;;
+    FAILED|CANCELLED) echo "El despliegue termino en $estado (job $job)" >&2; exit 1 ;;
+  esac
+  sleep "$ESPERA"
+done
+
+if [[ "$estado" != SUCCEED ]]; then
+  echo "El job $job sigue en $estado tras $((INTENTOS * ESPERA)) segundos" >&2
+  exit 1
+fi
+
+echo "Publicado (job $job)"
