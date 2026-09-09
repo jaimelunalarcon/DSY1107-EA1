@@ -1,0 +1,17 @@
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/Ae1Application.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/cache/CacheTtl.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/config/BackendConfig.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/config/BackendProperties.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/config/CorsConfig.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/indicadores/Estado.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/indicadores/IndicadorDesconocidoException.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/indicadores/IndicadoresController.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/indicadores/IndicadoresService.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/indicadores/OrigenNoDisponibleException.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/indicadores/Respuesta.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/productos/Producto.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/productos/ProductoController.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/productos/ProductoNoEncontradoException.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/productos/ProductoRepository.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/productos/ProductoService.java
+/Users/jaimeluna/Proyectos/DSY1107-EA1/backend/src/main/java/cl/duoc/dsy1107/ae1/web/ManejadorDeErrores.java

@@ -104,7 +104,7 @@ docker push "${REPO}:latest"
 # ---------------------------------------------------------------------------
 echo "==> 5/5 Registrando la revision y redesplegando"
 
-command -v jq >/dev/null || { echo "Falta jq." >&2; exit 1; }
+command -v jq >/dev/null || { echo "Falta jq (o instálalo: brew install jq)." >&2; exit 1; }
 
 TAREA_JSON="$(aws ecs describe-task-definition --region "$REGION" \
   --task-definition "$SERVICIO" --query taskDefinition --output json \

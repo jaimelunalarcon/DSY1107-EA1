@@ -12,6 +12,11 @@ fi
 
 cd "$TF_DIR"
 
+if ! terraform output -raw aws_region >/dev/null 2>&1; then
+  echo "No hay outputs. Ejecuta terraform apply primero." >&2
+  exit 1
+fi
+
 REGION="$(terraform output -raw aws_region)"
 POOL_ID="$(terraform output -raw cognito_user_pool_id)"
 CLIENT_ID="$(terraform output -raw cognito_client_id)"
@@ -30,4 +35,16 @@ gh variable set AMPLIFY_APP_ID --body "$APP_ID"
 gh variable set REDIRECT_URI --body "${AMPLIFY_URL}/"
 gh variable set AMPLIFY_BRANCH --body "main"
 
-echo "Listo. Revisa secrets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY y AWS_SESSION_TOKEN en GitHub."
+# 1.3.9 — ECS (si ya se aplicó ecs.tf / rds.tf)
+if terraform output -raw ecs_repositorio >/dev/null 2>&1; then
+  gh variable set ECR_REPO --body "$(terraform output -raw ecs_repositorio)"
+  gh variable set ECS_CLUSTER --body "$(terraform output -raw ecs_cluster)"
+  gh variable set ECS_SERVICE --body "$(terraform output -raw ecs_servicio)"
+  gh variable set API_ID --body "$(terraform output -raw api_id)"
+  gh variable set INTEGRATION_ID --body "$(terraform output -raw integracion_id)"
+  gh variable set INTEGRATION_PRODUCTOS_COL_ID --body "$(terraform output -raw integracion_productos_coleccion_id)"
+  gh variable set INTEGRATION_PRODUCTOS_ELE_ID --body "$(terraform output -raw integracion_productos_elemento_id)"
+  echo "Variables ECS/API Gateway también sincronizadas."
+fi
+
+echo "Listo. Revisa secrets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY y AWS_SESSION_TOKEN."

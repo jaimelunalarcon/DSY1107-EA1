@@ -208,6 +208,32 @@ Push a `frontend/**` dispara `frontend_deploy.yml`.
 
 ---
 
+## 1.3.9 — Backend en ECS Fargate
+
+Terraform crea ECR, cluster, task, service y RDS. La **imagen** la publica el script (no va en el tfstate).
+
+```bash
+# Lab activo + Docker + Java 21
+cd terraform
+terraform apply          # RDS tarda 5–10 min; el servicio puede reintentar sin imagen
+
+# Desde la raíz del repo:
+./scripts/publicar-ecs.sh
+```
+
+Eso: `mvnw verify` → `docker build --platform linux/amd64` → ECR → redespliegue → reapunta las 3 integraciones del API Gateway a `http://IP:8080/...`.
+
+Comprobar:
+
+```bash
+terraform -chdir=terraform output -raw probar_sin_token   # HTTP 401
+aws logs tail /ecs/dsy1107-backend-grupo33 --follow
+```
+
+Con token (login en el front): `GET /datos` → 200. Health directo: `http://IP:8080/actuator/health`.
+
+---
+
 ## Nota sobre AWS Academy
 
 En entornos académicos los recursos suelen borrarse al cerrar el lab. El flujo típico en cada sesión es:
@@ -230,6 +256,9 @@ En entornos académicos los recursos suelen borrarse al cerrar el lab. El flujo 
 - [x] Panel para consumir APIs con / sin token
 - [x] Terraform: Amplify (1.2.9e)
 - [x] `./deploy.sh` local + GitHub Actions deploy
+- [x] Backend Spring Boot (`backend/`)
+- [x] Terraform: RDS + ECS Fargate (1.3.9)
+- [x] `scripts/publicar-ecs.sh` + workflow `backend_deploy.yml`
 
 ---
 
@@ -247,10 +276,14 @@ cd frontend && npm run dev
 
 # Amplify (1.2.9e)
 ./deploy.sh
+
+# Backend ECS (1.3.9)
+cd terraform && terraform apply
+./scripts/publicar-ecs.sh
 ```
 
 ---
 
 ## Curso
 
-**DSY1107** — Evaluación EA1 · Grupo 33 · Actividad 1.2.9 (React) / 1.2.9e Amplify
+**DSY1107** — Evaluación EA1 · Grupo 33 · 1.2.9 / 1.2.9e Amplify · 1.3.9 ECS
