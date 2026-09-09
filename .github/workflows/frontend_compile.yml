@@ -3,9 +3,9 @@ name: Frontend Compile
 on:
   push:
     branches: [main]
-#    paths:
-#      - 'frontend/**'
-#      - '.github/workflows/frontend_compile.yml'
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend_compile.yml'
 
 permissions:
   contents: read
@@ -15,8 +15,6 @@ jobs:
     name: Frontend
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      RUTA_BUILD: frontend/dist/frontend/browser
 
     steps:
       - name: Checkout
@@ -28,6 +26,9 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+
+      - name: Config de ejemplo (solo para que el build tenga /config.json)
+        run: cp frontend/public/config.example.json frontend/public/config.json
 
       - name: Instalar dependencias
         working-directory: frontend

@@ -1,0 +1,7 @@
+{
+  "region": "us-east-1",
+  "cognitoDomain": "dsy1107-grupo33.auth.us-east-1.amazoncognito.com",
+  "clientId": "REEMPLAZAR_CON_terraform_output_cognito_client_id",
+  "redirectUri": "http://localhost:5173/",
+  "apiUrl": "https://REEMPLAZAR.execute-api.us-east-1.amazonaws.com"
+}

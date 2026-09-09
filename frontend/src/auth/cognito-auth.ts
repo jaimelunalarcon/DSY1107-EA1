@@ -16,7 +16,7 @@
  * 11  API responde                 api-test-panel.tsx
  */
 
-import { cognitoConfig } from "../config.ts";
+import { getCognitoConfig } from "../config.ts";
 import { createPkce } from "./pkce.ts";
 import {
   OAUTH_STATE_KEY,
@@ -36,6 +36,7 @@ import {
  * Ese redirect ocurre entre el PASO 3 (esta función) y el PASO 5 (el usuario).
  */
 export async function beginLogin(): Promise<void> {
+  const cognitoConfig = getCognitoConfig();
   // PASO 2 — generar code_verifier y code_challenge
   const { codeVerifier, codeChallenge } = await createPkce();
   const state = crypto.randomUUID();
@@ -84,7 +85,7 @@ export async function completeLoginFromCallback(): Promise<AuthTokens | null> {
   }
 
   const tokens = await exchangeCodeForTokens(code);
-  window.history.replaceState({}, document.title, cognitoConfig.redirectUri);
+  window.history.replaceState({}, document.title, getCognitoConfig().redirectUri);
   return tokens;
 }
 
@@ -94,6 +95,7 @@ export async function completeLoginFromCallback(): Promise<AuthTokens | null> {
  * PASO 9 — Cognito responde con ID Token y Access Token
  */
 async function exchangeCodeForTokens(code: string): Promise<AuthTokens> {
+  const cognitoConfig = getCognitoConfig();
   const codeVerifier = sessionStorage.getItem(PKCE_VERIFIER_KEY);
   if (!codeVerifier) {
     throw new Error("No hay code_verifier. Vuelve a iniciar sesión.");
@@ -142,6 +144,7 @@ async function exchangeCodeForTokens(code: string): Promise<AuthTokens> {
 
 export function beginLogout(): void {
   clearAuthStorage();
+  const cognitoConfig = getCognitoConfig();
   const params = new URLSearchParams({
     client_id: cognitoConfig.clientId,
     logout_uri: cognitoConfig.redirectUri,

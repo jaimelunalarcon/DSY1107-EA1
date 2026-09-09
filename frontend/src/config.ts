@@ -1,15 +1,58 @@
-export const cognitoConfig = {
-  authority:
-    "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_EGliVIr5e",
-  clientId: "676iaqis437v4inkqjtvoot06p",
-  // Local (Vite) o Amplify: debe coincidir con un callback_url de Cognito.
-  redirectUri: `${window.location.origin}/`,
-  responseType: "code" as const,
-  scope: "openid email profile",
-  domain: "https://dsy1107-grupo33.auth.us-east-1.amazoncognito.com",
-  region: "us-east-1",
+export type AppConfig = {
+  region: string;
+  cognitoDomain: string;
+  clientId: string;
+  redirectUri: string;
+  apiUrl: string;
 };
 
-export const apiConfig = {
-  baseUrl: "https://kaqk2cvuw6.execute-api.us-east-1.amazonaws.com",
-};
+let cached: AppConfig | null = null;
+
+function normalizeDomain(domain: string): string {
+  return domain.startsWith("http://") || domain.startsWith("https://")
+    ? domain
+    : `https://${domain}`;
+}
+
+/** Carga /config.json (Vite copia public/ al build). */
+export async function loadConfig(): Promise<AppConfig> {
+  const res = await fetch("/config.json", { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(
+      "Falta configurar el front: no existe /config.json. Ejecuta ./deploy.sh --config-local",
+    );
+  }
+  const data = (await res.json()) as AppConfig;
+  cached = {
+    region: data.region,
+    cognitoDomain: normalizeDomain(data.cognitoDomain),
+    clientId: data.clientId,
+    redirectUri: data.redirectUri,
+    apiUrl: data.apiUrl,
+  };
+  return cached;
+}
+
+export function getConfig(): AppConfig {
+  if (!cached) {
+    throw new Error("Config no cargada: llama loadConfig() antes de arrancar la app.");
+  }
+  return cached;
+}
+
+/** Forma usada por auth y el panel de API. */
+export function getCognitoConfig() {
+  const c = getConfig();
+  return {
+    clientId: c.clientId,
+    redirectUri: c.redirectUri,
+    responseType: "code" as const,
+    scope: "openid email profile",
+    domain: c.cognitoDomain,
+    region: c.region,
+  };
+}
+
+export function getApiConfig() {
+  return { baseUrl: getConfig().apiUrl };
+}

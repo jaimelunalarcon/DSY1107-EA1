@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { clsx } from "clsx";
-import { apiConfig, cognitoConfig } from "../config.ts";
+import { getApiConfig, getCognitoConfig } from "../config.ts";
 import { Button } from "./button";
 import { Container } from "./container";
 
@@ -27,6 +27,8 @@ async function readResponse(res: Response) {
 export function ApiTestPanel({ accessToken }: ApiTestPanelProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [result, setResult] = useState<ApiResult | null>(null);
+  const cognitoConfig = getCognitoConfig();
+  const apiConfig = getApiConfig();
 
   async function runTest(
     label: string,

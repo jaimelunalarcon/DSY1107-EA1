@@ -61,11 +61,15 @@ DSY1107-EA1/
 │   │   ├── auth/         # PKCE + Cognito + AuthContext
 │   │   ├── components/
 │   │   ├── App.tsx
-│   │   ├── config.ts     # IDs/URLs (local o generado en CI)
+│   │   ├── config.ts     # loadConfig() desde /config.json
 │   │   └── main.tsx
+│   ├── public/
+│   │   ├── config.example.json
+│   │   └── config.json   # generado por ./deploy.sh (gitignored)
 │   └── package.json
 ├── scripts/              # config-frontend.sh, publicar-amplify.sh
 ├── terraform/            # Infra AWS (Cognito, API GW, Amplify)
+├── deploy.sh             # 1.2.9e: config + build + Amplify
 └── sincronizar-github.sh # Volcar outputs de Terraform a vars de GitHub
 ```
 
@@ -128,25 +132,13 @@ terraform output
 
 ### 2. Actualizar el frontend
 
-Copia los outputs a `frontend/src/config.ts`:
-
-- `cognito_user_pool_id` → `authority`
-- `cognito_client_id` → `clientId`
-- `cognito_domain` → `domain` (con `https://`)
-- `api_base_url` → `apiConfig.baseUrl`
-
-`redirectUri` usa `window.location.origin` (local o Amplify). Debe existir en los `callback_urls` de Cognito.
-
-O genera el archivo con:
+Genera `frontend/public/config.json` desde Terraform (no edites IDs a mano):
 
 ```bash
-export REGION="$(terraform -chdir=terraform output -raw aws_region)"
-export USER_POOL_ID="$(terraform -chdir=terraform output -raw cognito_user_pool_id)"
-export CLIENT_ID="$(terraform -chdir=terraform output -raw cognito_client_id)"
-export COGNITO_DOMAIN="$(terraform -chdir=terraform output -raw cognito_domain)"
-export API_URL="$(terraform -chdir=terraform output -raw api_base_url)"
-./scripts/config-frontend.sh
+./deploy.sh --config-local
 ```
+
+Eso deja `redirectUri` en `http://localhost:5173/` (barra final incluida).
 
 ### 3. Usuario en Cognito
 
@@ -168,17 +160,63 @@ Abrir `http://localhost:5173/` e iniciar sesión.
 
 ---
 
+## 1.2.9e — Publicar en Amplify
+
+Tras `terraform apply` (Cognito + API + Amplify ya creados):
+
+```bash
+# Credenciales AWS activas (Academy / Free Tier)
+./deploy.sh
+```
+
+Eso:
+
+1. Escribe `frontend/public/config.json` con `redirectUri` = URL de Amplify  
+2. Compila el front (`npm run build`)  
+3. Sube el zip a Amplify (`create-deployment` → PUT → `start-deployment`)
+
+Abre la URL:
+
+```bash
+terraform -chdir=terraform output -raw amplify_url
+```
+
+Para volver a desarrollar en local:
+
+```bash
+./deploy.sh --config-local
+cd frontend && npm run dev
+```
+
+### Errores típicos (guía)
+
+| Síntoma | Causa |
+|---------|--------|
+| `redirect_mismatch` | Bundle con config de localhost en Amplify (o al revés) |
+| 404 en rutas SPA | Falta `custom_rule` en Amplify |
+| CORS bloqueado | Origen Amplify sin barra en Cognito; **sin** barra en CORS |
+| Zip 404 en `/` | Se comprimió la carpeta `dist`, no su **contenido** |
+
+### CI
+
+```bash
+./sincronizar-github.sh   # vars de GitHub desde Terraform
+# Secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN
+```
+
+Push a `frontend/**` dispara `frontend_deploy.yml`.
+
+---
+
 ## Nota sobre AWS Academy
 
 En entornos académicos los recursos suelen borrarse al cerrar el lab. El flujo típico en cada sesión es:
 
 1. Configurar credenciales nuevas.
 2. `terraform apply`
-3. Actualizar `config.ts` con los nuevos IDs/URLs.
-4. Recrear el usuario en Cognito.
+3. `./deploy.sh --config-local` (o `./deploy.sh` para Amplify)
+4. Recrear el usuario en Cognito si hace falta.
 5. Probar la SPA.
-
-El código de la app no cambia; solo los identificadores de AWS.
 
 ---
 
@@ -190,28 +228,8 @@ El código de la app no cambia; solo los identificadores de AWS.
 - [x] SPA React con UI de login y sesión
 - [x] Authorization Code + PKCE **manual** (sin `react-oidc-context`)
 - [x] Panel para consumir APIs con / sin token
-- [x] Terraform: Amplify (deploy manual / CI)
-- [x] GitHub Actions: compile + deploy a Amplify
-
----
-
-## Deploy en Amplify (CI)
-
-Tras `terraform apply`, sincroniza variables de GitHub:
-
-```bash
-./sincronizar-github.sh
-```
-
-Configura los secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` y `AWS_SESSION_TOKEN` (Academy) en el repositorio.
-
-Deploy local del build:
-
-```bash
-cd frontend && npm run build
-APP_ID="$(terraform -chdir=terraform output -raw amplify_app_id)"
-./scripts/publicar-amplify.sh "$APP_ID" main frontend/dist
-```
+- [x] Terraform: Amplify (1.2.9e)
+- [x] `./deploy.sh` local + GitHub Actions deploy
 
 ---
 
@@ -223,13 +241,16 @@ cd terraform && terraform plan
 cd terraform && terraform apply
 cd terraform && terraform output
 
-# Frontend
+# Frontend local
+./deploy.sh --config-local
 cd frontend && npm run dev
-cd frontend && npm run build
+
+# Amplify (1.2.9e)
+./deploy.sh
 ```
 
 ---
 
 ## Curso
 
-**DSY1107** — Evaluación EA1 · Grupo 33
+**DSY1107** — Evaluación EA1 · Grupo 33 · Actividad 1.2.9 (React) / 1.2.9e Amplify
