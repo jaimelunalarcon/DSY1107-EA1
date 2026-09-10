@@ -37,6 +37,23 @@ public class SolicitudPresupuestoService {
                 new SolicitudPresupuesto(titulo, descripcion, monto, solicitante, reloj.instant()));
     }
 
+    /** Solo mientras esta PENDIENTE (CRUD del trabajador). */
+    @Transactional
+    public SolicitudPresupuesto actualizar(long id, String titulo, String descripcion, int monto) {
+        SolicitudPresupuesto s = obtener(id);
+        exigirPendiente(s, "editar");
+        s.actualizarPendiente(titulo, descripcion, monto);
+        return s;
+    }
+
+    /** Solo mientras esta PENDIENTE. */
+    @Transactional
+    public void eliminar(long id) {
+        SolicitudPresupuesto s = obtener(id);
+        exigirPendiente(s, "eliminar");
+        repositorio.delete(s);
+    }
+
     /**
      * Solo PENDIENTE puede pasar a APROBADA o RECHAZADA. La autorizacion de
      * "quien puede decidir" la hace el API Gateway (scope presupuestos/decidir).
@@ -47,11 +64,16 @@ public class SolicitudPresupuestoService {
             throw new DecisionInvalidaException("La decision debe ser APROBADA o RECHAZADA");
         }
         SolicitudPresupuesto s = obtener(id);
-        if (s.getEstado() != EstadoSolicitud.PENDIENTE) {
-            throw new DecisionInvalidaException(
-                    "La solicitud " + id + " ya esta " + s.getEstado() + " y no se puede volver a decidir");
-        }
+        exigirPendiente(s, "decidir");
         s.decidir(nuevoEstado, comentario, reloj.instant());
         return s;
+    }
+
+    private static void exigirPendiente(SolicitudPresupuesto s, String accion) {
+        if (s.getEstado() != EstadoSolicitud.PENDIENTE) {
+            throw new DecisionInvalidaException(
+                    "No se puede " + accion + " la solicitud " + s.getId()
+                            + ": esta " + s.getEstado());
+        }
     }
 }

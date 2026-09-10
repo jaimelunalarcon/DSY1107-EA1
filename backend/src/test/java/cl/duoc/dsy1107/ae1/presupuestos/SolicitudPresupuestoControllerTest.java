@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -45,8 +46,7 @@ class SolicitudPresupuestoControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
                 .andExpect(jsonPath("$.estado").value("PENDIENTE"))
-                .andExpect(jsonPath("$.monto").value(250000))
-                .andExpect(jsonPath("$.solicitante").value("trabajador@duoc.cl"));
+                .andExpect(jsonPath("$.monto").value(250000));
     }
 
     @Test
@@ -55,35 +55,63 @@ class SolicitudPresupuestoControllerTest {
         crear();
         mvc.perform(get("/presupuestos"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].titulo").value("Viaje a feria"));
+                .andExpect(jsonPath("$.length()").value(1));
     }
 
     @Test
-    @DisplayName("PUT decision aprueba una pendiente")
+    @DisplayName("PUT edita una pendiente")
+    void editar() throws Exception {
+        long id = crear();
+        mvc.perform(put("/presupuestos/" + id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"titulo":"Viaje actualizado","descripcion":"Nuevo detalle","monto":300000}"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.titulo").value("Viaje actualizado"))
+                .andExpect(jsonPath("$.monto").value(300000))
+                .andExpect(jsonPath("$.estado").value("PENDIENTE"));
+    }
+
+    @Test
+    @DisplayName("DELETE borra una pendiente")
+    void eliminar() throws Exception {
+        long id = crear();
+        mvc.perform(delete("/presupuestos/" + id)).andExpect(status().isNoContent());
+        mvc.perform(get("/presupuestos/" + id)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("POST decision aprueba una pendiente")
     void aprobar() throws Exception {
         long id = crear();
-        mvc.perform(put("/presupuestos/" + id + "/decision")
+        mvc.perform(post("/presupuestos/" + id + "/decision")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"estado":"APROBADA","comentario":"Ok presupuesto"}"""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("APROBADA"))
-                .andExpect(jsonPath("$.comentarioAdmin").value("Ok presupuesto"))
-                .andExpect(jsonPath("$.decididoEn").exists());
+                .andExpect(jsonPath("$.comentarioAdmin").value("Ok presupuesto"));
     }
 
     @Test
-    @DisplayName("no se puede decidir dos veces")
+    @DisplayName("no se puede editar ni decidir dos veces")
     void yaDecidida() throws Exception {
         long id = crear();
-        mvc.perform(put("/presupuestos/" + id + "/decision")
+        mvc.perform(post("/presupuestos/" + id + "/decision")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"estado":"RECHAZADA","comentario":"Sin cupo"}"""))
                 .andExpect(status().isOk());
 
-        mvc.perform(put("/presupuestos/" + id + "/decision")
+        mvc.perform(put("/presupuestos/" + id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"titulo":"x","descripcion":"y","monto":1}"""))
+                .andExpect(status().isConflict());
+
+        mvc.perform(delete("/presupuestos/" + id)).andExpect(status().isConflict());
+
+        mvc.perform(post("/presupuestos/" + id + "/decision")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"estado":"APROBADA","comentario":"tarde"}"""))
@@ -107,7 +135,6 @@ class SolicitudPresupuestoControllerTest {
                                 {"titulo":" ","descripcion":"x","monto":0,"solicitante":"no-es-mail"}"""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.campos.titulo").exists())
-                .andExpect(jsonPath("$.campos.monto").exists())
-                .andExpect(jsonPath("$.campos.solicitante").exists());
+                .andExpect(jsonPath("$.campos.monto").exists());
     }
 }

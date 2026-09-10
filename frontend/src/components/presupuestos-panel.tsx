@@ -24,14 +24,13 @@ type PresupuestosPanelProps = {
   email: string;
 };
 
-/** Lee el claim scope del access token (solo UX; la seguridad es el API Gateway). */
 function scopesFromToken(accessToken: string): string[] {
   try {
     const payload = accessToken.split(".")[1];
     if (!payload) return [];
-    const json = JSON.parse(
-      atob(payload.replace(/-/g, "+").replace(/_/g, "/")),
-    ) as { scope?: string };
+    const padded = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const b64 = padded + "=".repeat((4 - (padded.length % 4)) % 4);
+    const json = JSON.parse(atob(b64)) as { scope?: string };
     return (json.scope ?? "").split(/\s+/).filter(Boolean);
   } catch {
     return [];
@@ -59,6 +58,7 @@ export function PresupuestosPanel({ accessToken, email }: PresupuestosPanelProps
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
+  const [editandoId, setEditandoId] = useState<number | null>(null);
   const [comentario, setComentario] = useState<Record<number, string>>({});
 
   const headers = useCallback(
@@ -95,34 +95,73 @@ export function PresupuestosPanel({ accessToken, email }: PresupuestosPanelProps
     void cargar();
   }, [cargar]);
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-    const res = await fetch(`${api}/presupuestos`, {
-      method: "POST",
-      headers: headers(),
-      body: JSON.stringify({
-        titulo: titulo.trim(),
-        descripcion: descripcion.trim(),
-        monto: Number(monto),
-        solicitante: email,
-      }),
-    });
-    const text = await res.text();
-    if (!res.ok) {
-      setError(`POST /presupuestos → HTTP ${res.status}: ${text}`);
-      return;
-    }
+  function empezarEdicion(s: Solicitud) {
+    setEditandoId(s.id);
+    setTitulo(s.titulo);
+    setDescripcion(s.descripcion);
+    setMonto(String(s.monto));
+  }
+
+  function cancelarForm() {
+    setEditandoId(null);
     setTitulo("");
     setDescripcion("");
     setMonto("");
+  }
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const bodyEdicion = {
+      titulo: titulo.trim(),
+      descripcion: descripcion.trim(),
+      monto: Number(monto),
+    };
+
+    const res =
+      editandoId === null
+        ? await fetch(`${api}/presupuestos`, {
+            method: "POST",
+            headers: headers(),
+            body: JSON.stringify({ ...bodyEdicion, solicitante: email }),
+          })
+        : await fetch(`${api}/presupuestos/${editandoId}`, {
+            method: "PUT",
+            headers: headers(),
+            body: JSON.stringify(bodyEdicion),
+          });
+
+    const text = await res.text();
+    if (!res.ok) {
+      setError(
+        `${editandoId === null ? "POST" : "PUT"} /presupuestos → HTTP ${res.status}: ${text}`,
+      );
+      return;
+    }
+    cancelarForm();
+    await cargar();
+  }
+
+  async function eliminar(id: number) {
+    if (!confirm(`¿Eliminar la solicitud #${id}?`)) return;
+    setError(null);
+    const res = await fetch(`${api}/presupuestos/${id}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      setError(`DELETE /presupuestos/${id} → HTTP ${res.status}: ${text}`);
+      return;
+    }
+    if (editandoId === id) cancelarForm();
     await cargar();
   }
 
   async function decidir(id: number, estado: "APROBADA" | "RECHAZADA") {
     setError(null);
     const res = await fetch(`${api}/presupuestos/${id}/decision`, {
-      method: "PUT",
+      method: "POST",
       headers: headers(),
       body: JSON.stringify({
         estado,
@@ -131,7 +170,7 @@ export function PresupuestosPanel({ accessToken, email }: PresupuestosPanelProps
     });
     const text = await res.text();
     if (!res.ok) {
-      setError(`PUT decision → HTTP ${res.status}: ${text}`);
+      setError(`POST decision → HTTP ${res.status}: ${text}`);
       return;
     }
     await cargar();
@@ -144,12 +183,13 @@ export function PresupuestosPanel({ accessToken, email }: PresupuestosPanelProps
           Solicitudes de presupuesto
         </h2>
         <p className="mt-2 max-w-2xl text-sm/6 text-gray-600">
-          Trabajador crea la solicitud (scope <code>presupuestos/write</code>).
-          Administrador aprueba o rechaza (<code>presupuestos/decidir</code>).
-          Sin el scope correcto el API Gateway responde 403.
+          Trabajador: crear / editar / eliminar mientras esté <code>PENDIENTE</code>{" "}
+          (<code>presupuestos/write</code>). Administrador: aprobar o rechazar (
+          <code>presupuestos/decidir</code>).
         </p>
         <p className="mt-2 font-mono text-xs text-gray-500">
-          scopes del token: {scopes.filter((s) => s.startsWith("presupuestos/")).join(", ") || "(ninguno)"}
+          scopes del token:{" "}
+          {scopes.filter((s) => s.startsWith("presupuestos/")).join(", ") || "(ninguno)"}
         </p>
 
         {error ? (
@@ -160,6 +200,9 @@ export function PresupuestosPanel({ accessToken, email }: PresupuestosPanelProps
 
         {puedeEscribir ? (
           <form onSubmit={onSubmit} className="mt-8 max-w-xl space-y-4">
+            <h3 className="text-sm font-medium text-gray-950">
+              {editandoId === null ? "Nueva solicitud" : `Editando #${editandoId}`}
+            </h3>
             <div>
               <label className="block text-sm font-medium text-gray-950">Actividad / proyecto</label>
               <input
@@ -192,8 +235,19 @@ export function PresupuestosPanel({ accessToken, email }: PresupuestosPanelProps
                 required
               />
             </div>
-            <p className="text-xs text-gray-500">Solicitante: {email}</p>
-            <Button type="submit">Enviar solicitud</Button>
+            {editandoId === null ? (
+              <p className="text-xs text-gray-500">Solicitante: {email}</p>
+            ) : null}
+            <div className="flex flex-wrap gap-3">
+              <Button type="submit">
+                {editandoId === null ? "Enviar solicitud" : "Guardar cambios"}
+              </Button>
+              {editandoId !== null ? (
+                <Button type="button" variant="outline" onClick={cancelarForm}>
+                  Cancelar
+                </Button>
+              ) : null}
+            </div>
           </form>
         ) : (
           <p className="mt-6 text-sm text-gray-600">
@@ -204,24 +258,26 @@ export function PresupuestosPanel({ accessToken, email }: PresupuestosPanelProps
         <div className="mt-12">
           <div className="flex items-center justify-between gap-4">
             <h3 className="text-base font-medium text-gray-950">Listado</h3>
-            <Button variant="outline" type="button" onClick={() => void cargar()} disabled={cargando || !puedeLeer}>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => void cargar()}
+              disabled={cargando || !puedeLeer}
+            >
               {cargando ? "Cargando…" : "Actualizar"}
             </Button>
           </div>
 
           {!puedeLeer ? (
             <p className="mt-4 text-sm text-gray-600">
-              Sin <code>presupuestos/read</code> no se puede listar (agrega el usuario a un grupo Cognito).
+              Sin <code>presupuestos/read</code> no se puede listar.
             </p>
           ) : lista.length === 0 ? (
             <p className="mt-4 text-sm text-gray-500">No hay solicitudes aún.</p>
           ) : (
             <ul className="mt-6 space-y-4">
               {lista.map((s) => (
-                <li
-                  key={s.id}
-                  className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5"
-                >
+                <li key={s.id} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-medium text-gray-950">
@@ -246,6 +302,17 @@ export function PresupuestosPanel({ accessToken, email }: PresupuestosPanelProps
 
                   {s.comentarioAdmin ? (
                     <p className="mt-3 text-sm text-gray-600">Admin: {s.comentarioAdmin}</p>
+                  ) : null}
+
+                  {puedeEscribir && s.estado === "PENDIENTE" ? (
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <Button type="button" variant="outline" onClick={() => empezarEdicion(s)}>
+                        Editar
+                      </Button>
+                      <Button type="button" variant="danger" onClick={() => void eliminar(s.id)}>
+                        Eliminar
+                      </Button>
+                    </div>
                   ) : null}
 
                   {puedeDecidir && s.estado === "PENDIENTE" ? (

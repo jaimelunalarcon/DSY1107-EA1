@@ -71,10 +71,12 @@ resource "aws_apigatewayv2_integration" "presupuestos_elemento" {
 
 locals {
   rutas_presupuestos = {
-    "GET /presupuestos"          = { scope = "presupuestos/read",    integracion = aws_apigatewayv2_integration.presupuestos_coleccion.id }
-    "POST /presupuestos"         = { scope = "presupuestos/write",   integracion = aws_apigatewayv2_integration.presupuestos_coleccion.id }
-    "GET /presupuestos/{proxy+}" = { scope = "presupuestos/read",    integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
-    "PUT /presupuestos/{proxy+}" = { scope = "presupuestos/decidir", integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
+    "GET /presupuestos"           = { scope = "presupuestos/read",    integracion = aws_apigatewayv2_integration.presupuestos_coleccion.id }
+    "POST /presupuestos"          = { scope = "presupuestos/write",   integracion = aws_apigatewayv2_integration.presupuestos_coleccion.id }
+    "GET /presupuestos/{proxy+}"  = { scope = "presupuestos/read",    integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
+    "PUT /presupuestos/{proxy+}"  = { scope = "presupuestos/write",   integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
+    "DELETE /presupuestos/{proxy+}" = { scope = "presupuestos/write", integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
+    "POST /presupuestos/{proxy+}" = { scope = "presupuestos/decidir", integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
   }
 }
 

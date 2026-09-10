@@ -41,14 +41,13 @@ spring:
   # "./mvnw test" corra las 29 pruebas sin RDS y sin Docker. Un localhost de
   # relleno lo romperia: las pruebas intentarian conectarse a una base que no
   # existe en la maquina de nadie.
-  # Si SPRING_DATASOURCE_URL no viene, H2 en memoria (classpath de test / local
-  # sin RDS). En ECS Terraform inyecta el JDBC de PostgreSQL.
+  # Si SPRING_DATASOURCE_URL no viene, H2 en memoria (pruebas / local sin RDS).
+  # En ECS Terraform inyecta el JDBC de PostgreSQL; Spring elige el driver por la URL.
   # ---------------------------------------------------------------------------
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:dsy1107;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE}
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
-    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
 
   jpa:
     hibernate:

@@ -102,6 +102,12 @@ public class SolicitudPresupuesto {
         return decididoEn;
     }
 
+    public void actualizarPendiente(String titulo, String descripcion, int monto) {
+        this.titulo = titulo;
+        this.descripcion = descripcion;
+        this.monto = monto;
+    }
+
     public void decidir(EstadoSolicitud nuevo, String comentario, Instant cuando) {
         this.estado = nuevo;
         this.comentarioAdmin = comentario;
