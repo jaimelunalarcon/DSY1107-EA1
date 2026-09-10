@@ -56,9 +56,11 @@ data "aws_subnets" "publicas" {
 # su tabla de rutas principal NO trae la ruta 0.0.0.0/0 hacia el. Una VPC por
 # defecto normal si la trae; esta no.
 #
-# Se declara como recurso para que quede en codigo y le pase a cualquiera que
-# clone esto. Si la cuenta ya tuviera la ruta, el apply falla con
-# RouteAlreadyExists y basta con borrar este bloque.
+# Se declara como recurso para que quede en codigo. Algunos labs YA traen la
+# ruta: apply falla con RouteAlreadyExists. En ese caso:
+#   crear_ruta_internet = false
+# en terraform.tfvars (o -var). La salida a internet ya existe; no hace falta
+# crearla ni importarla (import + destroy borraria la ruta del lab).
 # -----------------------------------------------------------------------------
 data "aws_internet_gateway" "default" {
   filter {
@@ -76,6 +78,8 @@ data "aws_route_table" "principal" {
 }
 
 resource "aws_route" "salida_a_internet" {
+  count = var.crear_ruta_internet ? 1 : 0
+
   route_table_id         = data.aws_route_table.principal.id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = data.aws_internet_gateway.default.id
@@ -209,6 +213,14 @@ resource "aws_ecs_task_definition" "backend" {
       # Si esto fuera a produccion, es lo primero que habria que cambiar.
       environment = [
         { name = "BACKEND_MINDICADOR_TTL", value = "10m" },
+
+        # El API Gateway reenvia el header Origin al backend (HTTP_PROXY).
+        # Spring valida CORS aunque el navegador "hable" con el Gateway: si
+        # Amplify no esta en la lista, GET /datos con Bearer responde
+        # 403 "Invalid CORS request" (sin token el 401 lo corta el authorizer).
+        { name = "BACKEND_CORS_ORIGENES_0", value = "http://localhost:4200" },
+        { name = "BACKEND_CORS_ORIGENES_1", value = "http://localhost:5173" },
+        { name = "BACKEND_CORS_ORIGENES_2", value = local.url_amplify },
 
         # sslmode=require no es opcional: desde PostgreSQL 15 RDS trae
         # rds.force_ssl en 1 y rechaza toda conexion en claro. Sin esto el

@@ -20,3 +20,9 @@ variable "backend_url" {
   description = "URI inicial del HTTP_PROXY (mindicador). publicar-ecs.sh la reemplaza por la IP de la task."
   default     = "https://mindicador.cl/api"
 }
+
+variable "crear_ruta_internet" {
+  type        = bool
+  description = "Crear 0.0.0.0/0 al IGW en la route table principal. Pon false si el lab ya la tiene (RouteAlreadyExists)."
+  default     = true
+}

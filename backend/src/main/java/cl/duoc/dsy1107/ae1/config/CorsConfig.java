@@ -28,7 +28,7 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins(props.cors().origenes().toArray(String[]::new))
-                .allowedMethods("GET", "DELETE", "OPTIONS")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("authorization", "content-type")
                 // Sin esto el JavaScript del front puede recibir la respuesta pero
                 // no leer X-Cache: los headers no estandar no se exponen solos.

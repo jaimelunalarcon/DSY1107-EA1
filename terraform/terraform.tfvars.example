@@ -2,3 +2,6 @@
 estudiante  = "grupo33"
 aws_region  = "us-east-1"
 # db_password = "Duoc2026Postgres"  # sin /, @, comillas ni espacios
+
+# Si apply falla con RouteAlreadyExists en aws_route.salida_a_internet:
+crear_ruta_internet = false

@@ -105,8 +105,9 @@ backend:
       - bitcoin
 
   cors:
-    # Solo para el modo local, apuntando el front derecho al :8080. En el
-    # despliegue real el CORS lo pone el API Gateway. Sin barra final.
+    # Local (:4200 Angular guia / :5173 React). En ECS se pisan con
+    # BACKEND_CORS_ORIGENES_* (incluye la URL de Amplify): el Gateway reenvia
+    # Origin y Spring lo valida aunque el CORS "oficial" sea el del API GW.
     origenes:
       - http://localhost:4200
       - http://localhost:5173
