@@ -259,6 +259,9 @@ En entornos académicos los recursos suelen borrarse al cerrar el lab. El flujo 
 - [x] Backend Spring Boot (`backend/`)
 - [x] Terraform: RDS + ECS Fargate (1.3.9)
 - [x] `scripts/publicar-ecs.sh` + workflow `backend_deploy.yml`
+- [x] Solicitudes de presupuesto (reemplaza productos) + scopes Cognito (1.3.11)
+- [x] Lambda `user-token-ms` (grupos → `presupuestos/read|write|decidir`)
+- [x] UI React: formulario trabajador + decisión administrador
 
 ---
 
@@ -286,4 +289,4 @@ cd terraform && terraform apply
 
 ## Curso
 
-**DSY1107** — Evaluación EA1 · Grupo 33 · 1.2.9 / 1.2.9e Amplify · 1.3.9 ECS
+**DSY1107** — Evaluación EA1 · Grupo 33 · Amplify · ECS · presupuestos + scopes (1.3.11)

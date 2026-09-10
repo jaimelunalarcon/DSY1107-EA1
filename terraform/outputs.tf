@@ -28,8 +28,8 @@ output "url_datos_publico" {
   value = "${aws_apigatewayv2_api.api_manager.api_endpoint}/publico/datos"
 }
 
-output "url_productos" {
-  value = "${aws_apigatewayv2_api.api_manager.api_endpoint}/productos"
+output "url_presupuestos" {
+  value = "${aws_apigatewayv2_api.api_manager.api_endpoint}/presupuestos"
 }
 
 output "probar_sin_token" {
@@ -46,10 +46,10 @@ output "integracion_id" {
   value = aws_apigatewayv2_integration.backend.id
 }
 
-output "integracion_productos_coleccion_id" {
-  value = aws_apigatewayv2_integration.productos_coleccion.id
+output "integracion_presupuestos_coleccion_id" {
+  value = aws_apigatewayv2_integration.presupuestos_coleccion.id
 }
 
-output "integracion_productos_elemento_id" {
-  value = aws_apigatewayv2_integration.productos_elemento.id
+output "integracion_presupuestos_elemento_id" {
+  value = aws_apigatewayv2_integration.presupuestos_elemento.id
 }

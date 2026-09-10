@@ -28,11 +28,12 @@ resource "aws_apigatewayv2_authorizer" "cognito" {
 }
 
 resource "aws_apigatewayv2_route" "datos" {
-  api_id             = aws_apigatewayv2_api.api_manager.id
-  route_key          = "GET /datos"
-  target             = "integrations/${aws_apigatewayv2_integration.backend.id}"
-  authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  api_id               = aws_apigatewayv2_api.api_manager.id
+  route_key            = "GET /datos"
+  target               = "integrations/${aws_apigatewayv2_integration.backend.id}"
+  authorization_type   = "JWT"
+  authorizer_id        = aws_apigatewayv2_authorizer.cognito.id
+  authorization_scopes = ["openid"]
 }
 
 resource "aws_apigatewayv2_route" "publico_datos" {
@@ -41,12 +42,12 @@ resource "aws_apigatewayv2_route" "publico_datos" {
   target    = "integrations/${aws_apigatewayv2_integration.backend.id}"
 }
 
-# CRUD /productos: integraciones ANY separadas (no reutilizar la de /datos).
-resource "aws_apigatewayv2_integration" "productos_coleccion" {
+# Solicitudes de presupuesto: integraciones ANY (no reutilizar la de /datos).
+resource "aws_apigatewayv2_integration" "presupuestos_coleccion" {
   api_id                 = aws_apigatewayv2_api.api_manager.id
   integration_type       = "HTTP_PROXY"
   integration_method     = "ANY"
-  integration_uri        = "${var.backend_url}/productos"
+  integration_uri        = "${var.backend_url}/presupuestos"
   payload_format_version = "1.0"
   timeout_milliseconds   = 29000
 
@@ -55,11 +56,11 @@ resource "aws_apigatewayv2_integration" "productos_coleccion" {
   }
 }
 
-resource "aws_apigatewayv2_integration" "productos_elemento" {
+resource "aws_apigatewayv2_integration" "presupuestos_elemento" {
   api_id                 = aws_apigatewayv2_api.api_manager.id
   integration_type       = "HTTP_PROXY"
   integration_method     = "ANY"
-  integration_uri        = "${var.backend_url}/productos/{proxy}"
+  integration_uri        = "${var.backend_url}/presupuestos/{proxy}"
   payload_format_version = "1.0"
   timeout_milliseconds   = 29000
 
@@ -69,23 +70,23 @@ resource "aws_apigatewayv2_integration" "productos_elemento" {
 }
 
 locals {
-  rutas_productos = {
-    "GET /productos"             = { integracion = aws_apigatewayv2_integration.productos_coleccion.id }
-    "POST /productos"            = { integracion = aws_apigatewayv2_integration.productos_coleccion.id }
-    "GET /productos/{proxy+}"    = { integracion = aws_apigatewayv2_integration.productos_elemento.id }
-    "PUT /productos/{proxy+}"    = { integracion = aws_apigatewayv2_integration.productos_elemento.id }
-    "DELETE /productos/{proxy+}" = { integracion = aws_apigatewayv2_integration.productos_elemento.id }
+  rutas_presupuestos = {
+    "GET /presupuestos"          = { scope = "presupuestos/read",    integracion = aws_apigatewayv2_integration.presupuestos_coleccion.id }
+    "POST /presupuestos"         = { scope = "presupuestos/write",   integracion = aws_apigatewayv2_integration.presupuestos_coleccion.id }
+    "GET /presupuestos/{proxy+}" = { scope = "presupuestos/read",    integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
+    "PUT /presupuestos/{proxy+}" = { scope = "presupuestos/decidir", integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
   }
 }
 
-resource "aws_apigatewayv2_route" "productos" {
-  for_each = local.rutas_productos
+resource "aws_apigatewayv2_route" "presupuestos" {
+  for_each = local.rutas_presupuestos
 
-  api_id             = aws_apigatewayv2_api.api_manager.id
-  route_key          = each.key
-  target             = "integrations/${each.value.integracion}"
-  authorization_type = "JWT"
-  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  api_id               = aws_apigatewayv2_api.api_manager.id
+  route_key            = each.key
+  target               = "integrations/${each.value.integracion}"
+  authorization_type   = "JWT"
+  authorizer_id        = aws_apigatewayv2_authorizer.cognito.id
+  authorization_scopes = [each.value.scope]
 }
 
 resource "aws_apigatewayv2_stage" "default" {

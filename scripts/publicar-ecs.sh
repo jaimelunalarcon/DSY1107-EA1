@@ -51,8 +51,8 @@ CLUSTER="$(leer ECS_CLUSTER ecs_cluster)"
 SERVICIO="$(leer ECS_SERVICE ecs_servicio)"
 API_ID="$(leer API_ID api_id)"
 INTEGRACION_ID="$(leer INTEGRATION_ID integracion_id)"
-INTEGRACION_PRODUCTOS_COL="$(leer INTEGRATION_PRODUCTOS_COL_ID integracion_productos_coleccion_id)"
-INTEGRACION_PRODUCTOS_ELE="$(leer INTEGRATION_PRODUCTOS_ELE_ID integracion_productos_elemento_id)"
+INTEGRACION_PRESUPUESTOS_COL="$(leer INTEGRATION_PRESUPUESTOS_COL_ID integracion_presupuestos_coleccion_id)"
+INTEGRACION_PRESUPUESTOS_ELE="$(leer INTEGRATION_PRESUPUESTOS_ELE_ID integracion_presupuestos_elemento_id)"
 
 # Etiqueta unica por despliegue, como pedia la lamina 19: reutilizar una
 # etiqueta hace imposible saber que esta corriendo, y volver atras.
@@ -209,18 +209,18 @@ reapuntar() {  # $1 = id de la integracion, $2 = ruta en el backend
     --integration-uri "http://${IP}:8080$2" >/dev/null
 }
 
-reapuntar "$INTEGRACION_ID"            "/datos"
-reapuntar "$INTEGRACION_PRODUCTOS_COL" "/productos"
+reapuntar "$INTEGRACION_ID"               "/datos"
+reapuntar "$INTEGRACION_PRESUPUESTOS_COL" "/presupuestos"
 
 # La llave de {proxy} va escapada para que bash no la toque: tiene que llegar
 # literal al API Gateway, que es quien la sustituye por el trozo de ruta que
 # capturo {proxy+}.
-reapuntar "$INTEGRACION_PRODUCTOS_ELE" "/productos/{proxy}"
+reapuntar "$INTEGRACION_PRESUPUESTOS_ELE" "/presupuestos/{proxy}"
 
 echo
 echo "OK  ${VERSION} desplegada."
 echo "    backend directo : http://${IP}:8080/actuator/health"
-echo "    productos       : http://${IP}:8080/productos"
+echo "    presupuestos    : http://${IP}:8080/presupuestos"
 if URL_API="$($TF output -raw url_datos_protegido 2>/dev/null)"; then
   echo "    via API Gateway : ${URL_API}   (401 sin token)"
 fi

@@ -5,6 +5,7 @@ import { Footer } from "./components/footer";
 import { Gradient, GradientBackground } from "./components/gradient";
 import { Navbar } from "./components/navbar";
 import { ApiTestPanel } from "./components/api-test-panel";
+import { PresupuestosPanel } from "./components/presupuestos-panel";
 import { useAuth } from "./auth/AuthContext.tsx";
 
 function AuthScreen({
@@ -67,6 +68,10 @@ function SignedInApp() {
 
       {/* PASOS 10 y 11 — llamar APIs con el access token */}
       <ApiTestPanel accessToken={tokens?.accessToken} />
+
+      {tokens?.accessToken ? (
+        <PresupuestosPanel accessToken={tokens.accessToken} email={email} />
+      ) : null}
 
       <Footer />
     </div>

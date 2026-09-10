@@ -2,7 +2,8 @@ package cl.duoc.dsy1107.ae1.web;
 
 import cl.duoc.dsy1107.ae1.indicadores.IndicadorDesconocidoException;
 import cl.duoc.dsy1107.ae1.indicadores.OrigenNoDisponibleException;
-import cl.duoc.dsy1107.ae1.productos.ProductoNoEncontradoException;
+import cl.duoc.dsy1107.ae1.presupuestos.DecisionInvalidaException;
+import cl.duoc.dsy1107.ae1.presupuestos.SolicitudNoEncontradaException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,7 @@ import java.util.stream.Collectors;
  * dominio: atiende tambien el CRUD de productos, y va a atender lo que venga.
  * Un @RestControllerAdvice es global por definicion; tenerlo escondido dentro de
  * un paquete de dominio invita a que el siguiente escriba un segundo manejador
- * sin saber que este existia.
+ * sin saber que este existia. Atiende indicadores y solicitudes de presupuesto.
  */
 @RestControllerAdvice
 public class ManejadorDeErrores {
@@ -65,10 +66,17 @@ public class ManejadorDeErrores {
     }
 
     /** El id pedido no esta en la tabla. */
-    @ExceptionHandler(ProductoNoEncontradoException.class)
-    public ResponseEntity<ErrorHttp> productoNoEncontrado(ProductoNoEncontradoException e) {
+    @ExceptionHandler(SolicitudNoEncontradaException.class)
+    public ResponseEntity<ErrorHttp> solicitudNoEncontrada(SolicitudNoEncontradaException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ErrorHttp("Producto no encontrado", e.getMessage(), Instant.now()));
+                .body(new ErrorHttp("Solicitud no encontrada", e.getMessage(), Instant.now()));
+    }
+
+    /** Decision sobre una solicitud que ya no esta pendiente, o estado ilegal. */
+    @ExceptionHandler(DecisionInvalidaException.class)
+    public ResponseEntity<ErrorHttp> decisionInvalida(DecisionInvalidaException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorHttp("Decision no permitida", e.getMessage(), Instant.now()));
     }
 
     /**

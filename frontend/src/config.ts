@@ -47,7 +47,7 @@ export function getCognitoConfig() {
     clientId: c.clientId,
     redirectUri: c.redirectUri,
     responseType: "code" as const,
-    scope: "openid email profile",
+    scope: "openid email profile aws.cognito.signin.user.admin",
     domain: c.cognitoDomain,
     region: c.region,
   };

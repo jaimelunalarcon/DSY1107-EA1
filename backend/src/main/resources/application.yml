@@ -14,7 +14,7 @@ spring:
     name: ae1-backend
 
   # ---------------------------------------------------------------------------
-  # La base del CRUD de /productos (terraform/rds.tf).
+  # La base de solicitudes de presupuesto (terraform/rds.tf).
   #
   # Hay dos formas de darle valores, y las dos sirven:
   #
@@ -41,11 +41,14 @@ spring:
   # "./mvnw test" corra las 29 pruebas sin RDS y sin Docker. Un localhost de
   # relleno lo romperia: las pruebas intentarian conectarse a una base que no
   # existe en la maquina de nadie.
+  # Si SPRING_DATASOURCE_URL no viene, H2 en memoria (classpath de test / local
+  # sin RDS). En ECS Terraform inyecta el JDBC de PostgreSQL.
   # ---------------------------------------------------------------------------
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://dsy1107-db-rivera.crgwtvlsw7oj.us-east-1.rds.amazonaws.com:5432/dsy1107?sslmode=require}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:Duoc2026Postgres}
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:dsy1107;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
 
   jpa:
     hibernate:

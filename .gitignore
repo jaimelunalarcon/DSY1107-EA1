@@ -36,6 +36,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Artefacto del Lambda (lo genera Terraform archive_file)
+terraform/user-token-ms.zip
+user-token-ms.zip
+
 # =========================
 # Java / Maven (backend)
 # =========================
