@@ -37,6 +37,11 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # =========================
+# Java / Maven (backend)
+# =========================
+backend/target/
+
+# =========================
 # Terraform
 # =========================
 

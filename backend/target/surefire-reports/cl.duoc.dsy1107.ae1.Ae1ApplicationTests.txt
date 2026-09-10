@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: cl.duoc.dsy1107.ae1.Ae1ApplicationTests
--------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.087 s -- in cl.duoc.dsy1107.ae1.Ae1ApplicationTests
