@@ -4,7 +4,6 @@ import { Container } from "./components/container";
 import { Footer } from "./components/footer";
 import { Gradient, GradientBackground } from "./components/gradient";
 import { Navbar } from "./components/navbar";
-import { ApiTestPanel } from "./components/api-test-panel";
 import { PresupuestosPanel } from "./components/presupuestos-panel";
 import { useAuth } from "./auth/AuthContext.tsx";
 
@@ -48,26 +47,15 @@ function SignedInApp() {
           <Navbar
             banner={
               <span className="flex items-center gap-1 rounded-full bg-fuchsia-950/35 px-3 py-0.5 text-sm/6 font-medium text-white">
-                Sesión protegida con Cognito
+                {email}
               </span>
             }
             actions={
               <Button onClick={logout}>Cerrar sesión</Button>
             }
           />
-          <div className="pt-8 pb-12 sm:pt-12 sm:pb-16 md:pt-16 md:pb-24">
-            <h1 className="text-xl font-medium text-gray-950">
-              Sesión iniciada.
-            </h1>
-            <p className="mt-4 max-w-lg text-base font-medium text-gray-950/75">
-              {email}
-            </p>
-          </div>
         </Container>
       </div>
-
-      {/* Cognito userInfo / GetUser */}
-      <ApiTestPanel accessToken={tokens?.accessToken} />
 
       {tokens?.accessToken ? (
         <PresupuestosPanel accessToken={tokens.accessToken} email={email} />

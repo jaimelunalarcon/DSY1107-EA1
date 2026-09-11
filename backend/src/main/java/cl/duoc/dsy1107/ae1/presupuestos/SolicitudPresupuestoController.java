@@ -51,13 +51,16 @@ public class SolicitudPresupuestoController {
             @Positive(message = "el monto debe ser mayor que cero")
             int monto,
 
+            @NotNull(message = "la categoria es obligatoria")
+            CategoriaSolicitud categoria,
+
             @NotBlank(message = "el solicitante es obligatorio")
             @Email(message = "el solicitante debe ser un correo valido")
             @Size(max = 320, message = "el solicitante no puede pasar de 320 caracteres")
             String solicitante) {
     }
 
-    /** Edicion: titulo, descripcion y monto (el solicitante no cambia). */
+    /** Edicion: titulo, descripcion, monto y categoria (el solicitante no cambia). */
     public record SolicitudEdicion(
             @NotBlank(message = "el titulo es obligatorio")
             @Size(max = 160, message = "el titulo no puede pasar de 160 caracteres")
@@ -68,7 +71,10 @@ public class SolicitudPresupuestoController {
             String descripcion,
 
             @Positive(message = "el monto debe ser mayor que cero")
-            int monto) {
+            int monto,
+
+            @NotNull(message = "la categoria es obligatoria")
+            CategoriaSolicitud categoria) {
     }
 
     public record DecisionNueva(
@@ -84,6 +90,7 @@ public class SolicitudPresupuestoController {
             String titulo,
             String descripcion,
             int monto,
+            CategoriaSolicitud categoria,
             String solicitante,
             EstadoSolicitud estado,
             String comentarioAdmin,
@@ -96,6 +103,7 @@ public class SolicitudPresupuestoController {
                     s.getTitulo(),
                     s.getDescripcion(),
                     s.getMonto(),
+                    s.getCategoria(),
                     s.getSolicitante(),
                     s.getEstado(),
                     s.getComentarioAdmin(),
@@ -117,7 +125,11 @@ public class SolicitudPresupuestoController {
     @PostMapping
     public ResponseEntity<SolicitudVista> crear(@Valid @RequestBody SolicitudNueva datos) {
         SolicitudPresupuesto creada = servicio.crear(
-                datos.titulo(), datos.descripcion(), datos.monto(), datos.solicitante());
+                datos.titulo(),
+                datos.descripcion(),
+                datos.monto(),
+                datos.solicitante(),
+                datos.categoria());
         SolicitudVista vista = SolicitudVista.de(creada);
         return ResponseEntity.created(URI.create("/presupuestos/" + vista.id())).body(vista);
     }
@@ -125,7 +137,8 @@ public class SolicitudPresupuestoController {
     @PutMapping("/{id}")
     public SolicitudVista actualizar(@PathVariable long id, @Valid @RequestBody SolicitudEdicion datos) {
         return SolicitudVista.de(
-                servicio.actualizar(id, datos.titulo(), datos.descripcion(), datos.monto()));
+                servicio.actualizar(
+                        id, datos.titulo(), datos.descripcion(), datos.monto(), datos.categoria()));
     }
 
     @DeleteMapping("/{id}")

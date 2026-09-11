@@ -8,7 +8,7 @@ type NavbarProps = {
 
 export function Navbar({ banner, actions }: NavbarProps) {
   return (
-    <header className="pt-6 sm:pt-8">
+    <header className="py-6 sm:py-8">
       <PlusGrid>
         <PlusGridRow className="relative flex justify-between">
           <div className="relative flex flex-1 gap-6">

@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SolicitudPresupuestoControllerTest {
 
     private static final String NUEVA = """
-            {"titulo":"Viaje a feria","descripcion":"Stand y pasajes","monto":250000,"solicitante":"trabajador@duoc.cl"}""";
+            {"titulo":"Viaje a feria","descripcion":"Stand y pasajes","monto":250000,"categoria":"VIATICOS","solicitante":"trabajador@duoc.cl"}""";
 
     @Autowired
     private MockMvc mvc;
@@ -46,6 +46,7 @@ class SolicitudPresupuestoControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
                 .andExpect(jsonPath("$.estado").value("PENDIENTE"))
+                .andExpect(jsonPath("$.categoria").value("VIATICOS"))
                 .andExpect(jsonPath("$.monto").value(250000));
     }
 
@@ -65,9 +66,10 @@ class SolicitudPresupuestoControllerTest {
         mvc.perform(put("/presupuestos/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"titulo":"Viaje actualizado","descripcion":"Nuevo detalle","monto":300000}"""))
+                                {"titulo":"Viaje actualizado","descripcion":"Nuevo detalle","monto":300000,"categoria":"MARKETING"}"""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.titulo").value("Viaje actualizado"))
+                .andExpect(jsonPath("$.categoria").value("MARKETING"))
                 .andExpect(jsonPath("$.monto").value(300000))
                 .andExpect(jsonPath("$.estado").value("PENDIENTE"));
     }
@@ -106,7 +108,7 @@ class SolicitudPresupuestoControllerTest {
         mvc.perform(put("/presupuestos/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"titulo":"x","descripcion":"y","monto":1}"""))
+                                {"titulo":"x","descripcion":"y","monto":1,"categoria":"OTRO"}"""))
                 .andExpect(status().isConflict());
 
         mvc.perform(delete("/presupuestos/" + id)).andExpect(status().isConflict());

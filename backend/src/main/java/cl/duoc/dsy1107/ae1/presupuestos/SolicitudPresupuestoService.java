@@ -32,17 +32,28 @@ public class SolicitudPresupuestoService {
     }
 
     @Transactional
-    public SolicitudPresupuesto crear(String titulo, String descripcion, int monto, String solicitante) {
+    public SolicitudPresupuesto crear(
+            String titulo,
+            String descripcion,
+            int monto,
+            String solicitante,
+            CategoriaSolicitud categoria) {
         return repositorio.save(
-                new SolicitudPresupuesto(titulo, descripcion, monto, solicitante, reloj.instant()));
+                new SolicitudPresupuesto(
+                        titulo, descripcion, monto, solicitante, categoria, reloj.instant()));
     }
 
     /** Solo mientras esta PENDIENTE (CRUD del trabajador). */
     @Transactional
-    public SolicitudPresupuesto actualizar(long id, String titulo, String descripcion, int monto) {
+    public SolicitudPresupuesto actualizar(
+            long id,
+            String titulo,
+            String descripcion,
+            int monto,
+            CategoriaSolicitud categoria) {
         SolicitudPresupuesto s = obtener(id);
         exigirPendiente(s, "editar");
-        s.actualizarPendiente(titulo, descripcion, monto);
+        s.actualizarPendiente(titulo, descripcion, monto, categoria);
         return s;
     }
 

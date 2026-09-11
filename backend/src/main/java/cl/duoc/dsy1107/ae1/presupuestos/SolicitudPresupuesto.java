@@ -29,12 +29,16 @@ public class SolicitudPresupuesto {
     @Column(nullable = false, length = 1000)
     private String descripcion;
 
-    /** Pesos chilenos, entero. Ver nota de dinero en el dominio del curso. */
+    /** Pesos chilenos, entero. */
     @Column(nullable = false)
     private int monto;
 
     @Column(nullable = false, length = 320)
     private String solicitante;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private CategoriaSolicitud categoria;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -57,11 +61,13 @@ public class SolicitudPresupuesto {
             String descripcion,
             int monto,
             String solicitante,
+            CategoriaSolicitud categoria,
             Instant creadoEn) {
         this.titulo = titulo;
         this.descripcion = descripcion;
         this.monto = monto;
         this.solicitante = solicitante;
+        this.categoria = categoria;
         this.estado = EstadoSolicitud.PENDIENTE;
         this.creadoEn = creadoEn;
     }
@@ -86,6 +92,10 @@ public class SolicitudPresupuesto {
         return solicitante;
     }
 
+    public CategoriaSolicitud getCategoria() {
+        return categoria;
+    }
+
     public EstadoSolicitud getEstado() {
         return estado;
     }
@@ -102,10 +112,12 @@ public class SolicitudPresupuesto {
         return decididoEn;
     }
 
-    public void actualizarPendiente(String titulo, String descripcion, int monto) {
+    public void actualizarPendiente(
+            String titulo, String descripcion, int monto, CategoriaSolicitud categoria) {
         this.titulo = titulo;
         this.descripcion = descripcion;
         this.monto = monto;
+        this.categoria = categoria;
     }
 
     public void decidir(EstadoSolicitud nuevo, String comentario, Instant cuando) {

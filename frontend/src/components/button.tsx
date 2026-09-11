@@ -16,9 +16,9 @@ const variants = {
     "disabled:bg-white/15 disabled:opacity-40 hover:bg-white/20",
   ),
   outline: clsx(
-    "inline-flex items-center justify-center px-2 py-[calc(--spacing(1.5)-1px)]",
-    "rounded-lg border border-transparent shadow-sm ring-1 ring-black/10",
-    "text-sm font-medium whitespace-nowrap text-gray-950",
+    "inline-flex items-center justify-center px-4 py-[calc(--spacing(2)-1px)]",
+    "rounded-full border border-transparent shadow-sm ring-1 ring-black/10",
+    "text-base font-medium whitespace-nowrap text-gray-950",
     "disabled:bg-transparent disabled:opacity-40 hover:bg-gray-50",
   ),
   danger: clsx(
@@ -39,6 +39,6 @@ export function Button({
   ...props
 }: ButtonProps) {
   return (
-    <button {...props} className={clsx(className, variants[variant])} />
+    <button {...props} className={clsx(variants[variant], className)} />
   );
 }
