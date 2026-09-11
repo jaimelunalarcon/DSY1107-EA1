@@ -81,11 +81,19 @@ export function PresupuestosPanel({ accessToken, email }: PresupuestosPanelProps
       const text = await res.text();
       if (!res.ok) {
         setError(`GET /presupuestos → HTTP ${res.status}: ${text}`);
+        setLista([]);
         return;
       }
-      setLista(JSON.parse(text) as Solicitud[]);
+      const data: unknown = JSON.parse(text);
+      if (!Array.isArray(data)) {
+        setError(`GET /presupuestos no devolvió un array: ${text}`);
+        setLista([]);
+        return;
+      }
+      setLista(data as Solicitud[]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al listar");
+      setLista([]);
     } finally {
       setCargando(false);
     }
