@@ -171,6 +171,10 @@ export function PresupuestosPanel({ accessToken, email }: PresupuestosPanelProps
 
     const text = await res.text();
     if (!res.ok) {
+      if (res.status === 403) {
+        setError("403 - Sin permisos para generar solicitudes");
+        return;
+      }
       setError(
         `${editandoId === null ? "POST" : "PUT"} /presupuestos → HTTP ${res.status}: ${text}`,
       );
@@ -426,7 +430,14 @@ export function PresupuestosPanel({ accessToken, email }: PresupuestosPanelProps
             </div>
           </div>
         ) : (
-          listado
+          <>
+            {!puedeDecidir ? (
+              <pre className="mt-6 overflow-auto rounded-lg bg-red-50 p-4 text-xs text-red-800 ring-1 ring-red-200">
+                403 - Sin permisos para generar solicitudes
+              </pre>
+            ) : null}
+            {listado}
+          </>
         )}
       </Container>
 
