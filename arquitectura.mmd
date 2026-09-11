@@ -1,9 +1,8 @@
 %% DSY1107 - EA1: Cognito + API Gateway + Amplify + ECS + presupuestos
-%% Login PKCE (1-5) y peticion autorizada por scope (6-9).
+%% Login PKCE y peticion autorizada por scope.
 
 flowchart LR
     usuario(["Usuario"])
-    externo["mindicador.cl"]
 
     subgraph navegador["Navegador"]
         spa["SPA React + Vite<br/>PKCE + panel presupuestos"]
@@ -18,11 +17,11 @@ flowchart LR
         end
         subgraph manager["API Gateway HTTP"]
             authorizer{{"JWT Authorizer"}}
-            rutas["Scopes:<br/>presupuestos/read · write · decidir<br/>GET /datos → openid"]
+            rutas["Scopes:<br/>presupuestos/read · write · decidir"]
         end
         subgraph computo["Computo"]
             amplify["Amplify Hosting"]
-            backend["Spring Boot ECS<br/>/datos + /presupuestos"]
+            backend["Spring Boot ECS<br/>/presupuestos"]
             rds[("RDS PostgreSQL")]
         end
     end
@@ -38,7 +37,6 @@ flowchart LR
     authorizer -. JWKS .-> jwks
     authorizer --> rutas
     rutas --> backend
-    backend --> externo
     backend --> rds
     authorizer -- "401" --> spa
     rutas -- "403 sin scope" --> spa

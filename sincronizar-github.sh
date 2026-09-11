@@ -41,7 +41,6 @@ if terraform output -raw ecs_repositorio >/dev/null 2>&1; then
   gh variable set ECS_CLUSTER --body "$(terraform output -raw ecs_cluster)"
   gh variable set ECS_SERVICE --body "$(terraform output -raw ecs_servicio)"
   gh variable set API_ID --body "$(terraform output -raw api_id)"
-  gh variable set INTEGRATION_ID --body "$(terraform output -raw integracion_id)"
   gh variable set INTEGRATION_PRESUPUESTOS_COL_ID --body "$(terraform output -raw integracion_presupuestos_coleccion_id)"
   gh variable set INTEGRATION_PRESUPUESTOS_ELE_ID --body "$(terraform output -raw integracion_presupuestos_elemento_id)"
   echo "Variables ECS/API Gateway también sincronizadas."

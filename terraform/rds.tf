@@ -5,12 +5,9 @@
 # maquina y quedarse solo con el servicio. Aqui no hay un servidor Postgres que
 # instalar, parchar ni respaldar; hay un endpoint, un usuario y una contrasena.
 #
-# QUEDA APARTE DEL BACKEND A PROPOSITO. El backend de la EA1 es un proxy con
-# cache en memoria sobre mindicador.cl y NO necesita base de datos: si le
-# agregas el driver de Postgres y no le das una URL, Spring Boot no arranca.
-# Este archivo entrega la base y las variables listas; conectarla es un paso
-# explicito, documentado abajo en el output "backend_env".
-#
+# QUEDA APARTE DEL BACKEND A PROPOSITO. El servicio Spring usa esta base para
+# solicitudes de presupuesto; el archivo entrega el endpoint y las variables
+# listas (output "backend_env").#
 #   terraform apply -target=aws_db_instance.postgres
 #
 # Tarda entre 5 y 10 minutos. Es normal: RDS aprovisiona almacenamiento, crea

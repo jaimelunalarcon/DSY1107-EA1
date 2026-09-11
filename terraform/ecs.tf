@@ -32,7 +32,7 @@
 # Crear una VPC propia seria lo correcto en produccion y una distraccion aqui:
 # la EA1 trata de API Manager e identidad, no de redes. Las subredes publicas
 # alcanzan porque la task necesita salida a internet para bajar la imagen de ECR
-# y para llamar a mindicador.cl, y en el lab no hay NAT Gateway.
+# y hablar con RDS/APIs de AWS, y en el lab no hay NAT Gateway.
 # -----------------------------------------------------------------------------
 data "aws_vpc" "default" {
   default = true
@@ -146,7 +146,7 @@ resource "aws_security_group" "tarea" {
   }
 
   egress {
-    description = "Salida para bajar la imagen de ECR y llamar a mindicador.cl"
+    description = "Salida para bajar la imagen de ECR y alcanzar RDS/AWS"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -212,12 +212,10 @@ resource "aws_ecs_task_definition" "backend" {
       # recurso, un permiso de IAM y una discusion que no es la de esta EA.
       # Si esto fuera a produccion, es lo primero que habria que cambiar.
       environment = [
-        { name = "BACKEND_MINDICADOR_TTL", value = "10m" },
-
         # El API Gateway reenvia el header Origin al backend (HTTP_PROXY).
         # Spring valida CORS aunque el navegador "hable" con el Gateway: si
-        # Amplify no esta en la lista, GET /datos con Bearer responde
-        # 403 "Invalid CORS request" (sin token el 401 lo corta el authorizer).
+        # Amplify no esta en la lista, las peticiones con Bearer pueden
+        # responder 403 "Invalid CORS request".
         { name = "BACKEND_CORS_ORIGENES_0", value = "http://localhost:4200" },
         { name = "BACKEND_CORS_ORIGENES_1", value = "http://localhost:5173" },
         { name = "BACKEND_CORS_ORIGENES_2", value = local.url_amplify },

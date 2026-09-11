@@ -30,9 +30,6 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedOrigins(props.cors().origenes().toArray(String[]::new))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("authorization", "content-type")
-                // Sin esto el JavaScript del front puede recibir la respuesta pero
-                // no leer X-Cache: los headers no estandar no se exponen solos.
-                .exposedHeaders("X-Cache", "X-Cache-Edad")
                 .maxAge(300);
     }
 }

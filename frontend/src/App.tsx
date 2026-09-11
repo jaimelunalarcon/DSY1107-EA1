@@ -66,7 +66,7 @@ function SignedInApp() {
         </Container>
       </div>
 
-      {/* PASOS 10 y 11 — llamar APIs con el access token */}
+      {/* Cognito userInfo / GetUser */}
       <ApiTestPanel accessToken={tokens?.accessToken} />
 
       {tokens?.accessToken ? (

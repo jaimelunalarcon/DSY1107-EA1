@@ -1,20 +1,7 @@
 data "aws_region" "current" {}
 
-# Integración de /datos (método y URI fijos). Tras publicar-ecs.sh apunta a
-# http://IP:8080/datos. ignore_changes evita que apply la devuelva a mindicador.
-resource "aws_apigatewayv2_integration" "backend" {
-  api_id                 = aws_apigatewayv2_api.api_manager.id
-  integration_type       = "HTTP_PROXY"
-  integration_method     = "GET"
-  integration_uri        = var.backend_url
-  payload_format_version = "1.0"
-  timeout_milliseconds   = 29000
-
-  lifecycle {
-    ignore_changes = [integration_uri]
-  }
-}
-
+# JWT authorizer (Cognito). Las rutas de negocio apuntan a ECS via
+# publicar-ecs.sh (ignore_changes en integration_uri).
 resource "aws_apigatewayv2_authorizer" "cognito" {
   api_id           = aws_apigatewayv2_api.api_manager.id
   authorizer_type  = "JWT"
@@ -27,22 +14,7 @@ resource "aws_apigatewayv2_authorizer" "cognito" {
   }
 }
 
-resource "aws_apigatewayv2_route" "datos" {
-  api_id               = aws_apigatewayv2_api.api_manager.id
-  route_key            = "GET /datos"
-  target               = "integrations/${aws_apigatewayv2_integration.backend.id}"
-  authorization_type   = "JWT"
-  authorizer_id        = aws_apigatewayv2_authorizer.cognito.id
-  authorization_scopes = ["openid"]
-}
-
-resource "aws_apigatewayv2_route" "publico_datos" {
-  api_id    = aws_apigatewayv2_api.api_manager.id
-  route_key = "GET /publico/datos"
-  target    = "integrations/${aws_apigatewayv2_integration.backend.id}"
-}
-
-# Solicitudes de presupuesto: integraciones ANY (no reutilizar la de /datos).
+# Solicitudes de presupuesto: integraciones ANY hacia el backend Spring.
 resource "aws_apigatewayv2_integration" "presupuestos_coleccion" {
   api_id                 = aws_apigatewayv2_api.api_manager.id
   integration_type       = "HTTP_PROXY"
@@ -71,12 +43,12 @@ resource "aws_apigatewayv2_integration" "presupuestos_elemento" {
 
 locals {
   rutas_presupuestos = {
-    "GET /presupuestos"           = { scope = "presupuestos/read",    integracion = aws_apigatewayv2_integration.presupuestos_coleccion.id }
-    "POST /presupuestos"          = { scope = "presupuestos/write",   integracion = aws_apigatewayv2_integration.presupuestos_coleccion.id }
-    "GET /presupuestos/{proxy+}"  = { scope = "presupuestos/read",    integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
-    "PUT /presupuestos/{proxy+}"  = { scope = "presupuestos/write",   integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
-    "DELETE /presupuestos/{proxy+}" = { scope = "presupuestos/write", integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
-    "POST /presupuestos/{proxy+}" = { scope = "presupuestos/decidir", integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
+    "GET /presupuestos"             = { scope = "presupuestos/read",    integracion = aws_apigatewayv2_integration.presupuestos_coleccion.id }
+    "POST /presupuestos"            = { scope = "presupuestos/write",   integracion = aws_apigatewayv2_integration.presupuestos_coleccion.id }
+    "GET /presupuestos/{proxy+}"    = { scope = "presupuestos/read",    integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
+    "PUT /presupuestos/{proxy+}"    = { scope = "presupuestos/write",   integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
+    "DELETE /presupuestos/{proxy+}" = { scope = "presupuestos/write",   integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
+    "POST /presupuestos/{proxy+}"   = { scope = "presupuestos/decidir", integracion = aws_apigatewayv2_integration.presupuestos_elemento.id }
   }
 }
 

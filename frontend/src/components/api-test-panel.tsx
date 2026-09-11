@@ -1,6 +1,7 @@
+// APIs de prueba Cognito (userInfo / GetUser). Las solicitudes van en PresupuestosPanel.
 import { useState } from "react";
 import { clsx } from "clsx";
-import { getApiConfig, getCognitoConfig } from "../config.ts";
+import { getCognitoConfig } from "../config.ts";
 import { Button } from "./button";
 import { Container } from "./container";
 
@@ -28,12 +29,8 @@ export function ApiTestPanel({ accessToken }: ApiTestPanelProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [result, setResult] = useState<ApiResult | null>(null);
   const cognitoConfig = getCognitoConfig();
-  const apiConfig = getApiConfig();
 
-  async function runTest(
-    label: string,
-    request: () => Promise<Response>,
-  ) {
+  async function runTest(label: string, request: () => Promise<Response>) {
     setLoading(label);
     try {
       const res = await request();
@@ -89,47 +86,13 @@ export function ApiTestPanel({ accessToken }: ApiTestPanelProps) {
           }),
         ),
     },
-    {
-      id: "datosConToken",
-      label: "/datos con token",
-      variant: "primary" as const,
-      disabled: !accessToken,
-      // PASO 10 — Request a Your API (API Gateway) con Access Token
-      // PASO 11 — la respuesta HTTP se muestra debajo
-      action: () =>
-        runTest("/datos con token", () =>
-          fetch(`${apiConfig.baseUrl}/datos`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }),
-        ),
-    },
-    {
-      id: "datosSinToken",
-      label: "/datos sin token",
-      variant: "danger" as const,
-      disabled: false,
-      action: () =>
-        runTest("/datos sin token", () =>
-          fetch(`${apiConfig.baseUrl}/datos`),
-        ),
-    },
-    {
-      id: "publicoDatos",
-      label: "/publico/datos",
-      variant: "primary" as const,
-      disabled: false,
-      action: () =>
-        runTest("/publico/datos", () =>
-          fetch(`${apiConfig.baseUrl}/publico/datos`),
-        ),
-    },
   ];
 
   return (
     <section className="border-t border-black/5 bg-white py-16 sm:py-24">
       <Container>
         <h2 className="text-sm font-semibold tracking-widest text-gray-500 uppercase">
-          APIs 
+          Cognito
         </h2>
 
         <div className="mt-8 flex flex-wrap gap-3">
@@ -156,9 +119,7 @@ export function ApiTestPanel({ accessToken }: ApiTestPanelProps) {
           >
             <div className="border-b border-black/5 bg-gray-50 px-4 py-3 font-mono text-sm text-gray-950">
               {result.label} →{" "}
-              {result.status !== null
-                ? `HTTP ${result.status}`
-                : "Error de red"}
+              {result.status !== null ? `HTTP ${result.status}` : "Error de red"}
             </div>
             <pre className="max-h-[28rem] overflow-auto bg-gray-100 p-4 font-mono text-xs/6 text-gray-800 sm:text-sm/6">
               {result.body}
@@ -166,7 +127,7 @@ export function ApiTestPanel({ accessToken }: ApiTestPanelProps) {
           </div>
         ) : (
           <p className="mt-8 text-sm/6 text-gray-500">
-            Elige un endpoint para ver el status HTTP y el JSON de respuesta.
+            Prueba userInfo o GetUser con el access token de la sesión.
           </p>
         )}
       </Container>

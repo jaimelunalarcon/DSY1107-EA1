@@ -17,8 +17,8 @@ variable "aws_region" {
 
 variable "backend_url" {
   type        = string
-  description = "URI inicial del HTTP_PROXY (mindicador). publicar-ecs.sh la reemplaza por la IP de la task."
-  default     = "https://mindicador.cl/api"
+  description = "URI base inicial del HTTP_PROXY (placeholder). publicar-ecs.sh la reemplaza por http://IP:8080."
+  default     = "http://127.0.0.1:8080"
 }
 
 variable "crear_ruta_internet" {

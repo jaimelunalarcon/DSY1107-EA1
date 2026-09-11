@@ -1,5 +1,5 @@
 resource "aws_apigatewayv2_api" "api_manager" {
-  name          = "api-mindicador"
+  name          = "api-presupuestos-${var.estudiante}"
   protocol_type = "HTTP"
 
   cors_configuration {

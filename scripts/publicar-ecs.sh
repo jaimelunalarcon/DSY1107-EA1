@@ -50,7 +50,6 @@ REPO="$(leer ECR_REPO ecs_repositorio)"
 CLUSTER="$(leer ECS_CLUSTER ecs_cluster)"
 SERVICIO="$(leer ECS_SERVICE ecs_servicio)"
 API_ID="$(leer API_ID api_id)"
-INTEGRACION_ID="$(leer INTEGRATION_ID integracion_id)"
 INTEGRACION_PRESUPUESTOS_COL="$(leer INTEGRATION_PRESUPUESTOS_COL_ID integracion_presupuestos_coleccion_id)"
 INTEGRACION_PRESUPUESTOS_ELE="$(leer INTEGRATION_PRESUPUESTOS_ELE_ID integracion_presupuestos_elemento_id)"
 
@@ -198,10 +197,8 @@ if [ -z "$IP" ] || [ "$IP" = "None" ]; then
   exit 1
 fi
 
-# Las TRES integraciones apuntan a la misma task, cada una a su ruta. Olvidar
-# una no rompe nada a la vista: esa ruta sigue respondiendo, pero contra la IP
-# de la task anterior, que ya no existe. Por eso van juntas en un bucle y no
-# en tres llamadas sueltas que se puedan desincronizar al editarlas.
+# Las dos integraciones de presupuestos apuntan a la misma task. Olvidar una
+# deja esa ruta contra la IP de la task anterior (que ya no existe).
 reapuntar() {  # $1 = id de la integracion, $2 = ruta en el backend
   aws apigatewayv2 update-integration --region "$REGION" \
     --api-id "$API_ID" \
@@ -209,7 +206,6 @@ reapuntar() {  # $1 = id de la integracion, $2 = ruta en el backend
     --integration-uri "http://${IP}:8080$2" >/dev/null
 }
 
-reapuntar "$INTEGRACION_ID"               "/datos"
 reapuntar "$INTEGRACION_PRESUPUESTOS_COL" "/presupuestos"
 
 # La llave de {proxy} va escapada para que bash no la toque: tiene que llegar
@@ -221,9 +217,9 @@ echo
 echo "OK  ${VERSION} desplegada."
 echo "    backend directo : http://${IP}:8080/actuator/health"
 echo "    presupuestos    : http://${IP}:8080/presupuestos"
-if URL_API="$($TF output -raw url_datos_protegido 2>/dev/null)"; then
+if URL_API="$($TF output -raw url_presupuestos 2>/dev/null)"; then
   echo "    via API Gateway : ${URL_API}   (401 sin token)"
 fi
 echo
 echo "    La IP cambia en cada despliegue; por eso este script reapunta el"
-echo "    gateway. apigateway.tf lo sabe: ignore_changes en integration_uri."
+echo "    gateway. main.tf usa ignore_changes en integration_uri."

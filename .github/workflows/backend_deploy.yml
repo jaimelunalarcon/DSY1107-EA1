@@ -160,24 +160,14 @@ jobs:
           wait-for-service-stability: true
 
       # -----------------------------------------------------------------------
-      # Esto no lo hace ningun action, y es lo que conecta el gateway con el
-      # backend.
-      #
-      # Sin balanceador, la direccion del backend es la IP publica de la task, y
-      # cambia en cada despliegue. Las TRES integraciones apuntan a la misma
-      # task, cada una a su ruta. Olvidar una no rompe nada a la vista: esa ruta
-      # sigue respondiendo, pero contra la IP de la task anterior, que ya no
-      # existe.
-      #
-      # La IP no se pregunta directo: la task expone una interfaz de red (ENI) y
-      # la IP cuelga de esa interfaz. Son tres saltos.
+      # Sin balanceador, la direccion del backend es la IP publica de la task.
+      # Las dos integraciones de presupuestos apuntan a la misma task.
       # -----------------------------------------------------------------------
       - name: Reapuntar el API Gateway
         env:
           CLUSTER: ${{ vars.ECS_CLUSTER }}
           SERVICIO: ${{ vars.ECS_SERVICE }}
           API_ID: ${{ vars.API_ID }}
-          INT_DATOS: ${{ vars.INTEGRATION_ID }}
           INT_PRES_COL: ${{ vars.INTEGRATION_PRESUPUESTOS_COL_ID }}
           INT_PRES_ELE: ${{ vars.INTEGRATION_PRESUPUESTOS_ELE_ID }}
         run: |
@@ -204,14 +194,12 @@ jobs:
               --integration-uri "http://${IP}:8080$2" >/dev/null
           }
 
-          reapuntar "$INT_DATOS"    "/datos"
           reapuntar "$INT_PRES_COL" "/presupuestos"
-          # La llave de {proxy} tiene que llegar literal al API Gateway, que es
-          # quien la sustituye por el trozo de ruta que capturo {proxy+}.
+          # La llave de {proxy} tiene que llegar literal al API Gateway.
           reapuntar "$INT_PRES_ELE" "/presupuestos/{proxy}"
 
           echo "IP=$IP" >> "$GITHUB_ENV"
-          echo "Las tres integraciones apuntan a $IP."
+          echo "Las integraciones de presupuestos apuntan a $IP."
 
       - name: Resumen
         if: always()
@@ -225,10 +213,9 @@ jobs:
               echo ""
               echo "| Ruta | URL |"
               echo "|------|-----|"
-              echo "| Indicadores   | ${API_URL}/datos |"
               echo "| Presupuestos  | ${API_URL}/presupuestos |"
               echo ""
-              echo "Las dos exigen \`Authorization: Bearer <access_token>\`."
+              echo "Exige \`Authorization: Bearer <access_token>\` y scopes Cognito."
               echo ""
               echo "Backend directo (sin token): \`http://${IP:-?}:8080/actuator/health\`"
               echo ""
