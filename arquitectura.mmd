@@ -1,5 +1,5 @@
-%% DSY1107 - EA1: Cognito + API Gateway + Amplify + ECS + presupuestos
-%% Login PKCE y peticion autorizada por scope.
+%% DSY1107 - EA1 + EP2: Cognito + API Gateway + Amplify + ECS + presupuestos + RabbitMQ
+%% Login PKCE, peticion autorizada por scope y eventos asincronos por RabbitMQ.
 
 flowchart LR
     usuario(["Usuario"])
@@ -19,10 +19,19 @@ flowchart LR
             authorizer{{"JWT Authorizer"}}
             rutas["Scopes:<br/>presupuestos/read · write · decidir"]
         end
-        subgraph computo["Computo"]
-            amplify["Amplify Hosting"]
-            backend["Spring Boot ECS<br/>/presupuestos"]
-            rds[("RDS PostgreSQL")]
+        subgraph computo["ECS Fargate"]
+            backend["backend (presupuestos)<br/>Spring Boot<br/>productor de eventos"]
+            notificaciones["notificaciones-ms<br/>@RabbitListener + ACK manual<br/>notificaciones · tickets · auditor DLQ"]
+            admin["rabbit-admin-ms<br/>REST colas · exchanges · bindings"]
+        end
+        amplify["Amplify Hosting"]
+        rds[("RDS PostgreSQL")]
+        subgraph mensajeria["RabbitMQ en EC2 + Docker<br/>cluster 3 nodos · colas quorum"]
+            exchange{{"presupuestos.exchange<br/>direct"}}
+            qcreada[["presupuestos.notificaciones<br/>.solicitud-creada"]]
+            qdecidida[["presupuestos.tickets<br/>.solicitud-decidida"]]
+            dlx{{"presupuestos.dlx"}}
+            dlq[["presupuestos.dlq"]]
         end
     end
 
@@ -40,3 +49,14 @@ flowchart LR
     backend --> rds
     authorizer -- "401" --> spa
     rutas -- "403 sin scope" --> spa
+
+    backend -- "solicitud.creada<br/>solicitud.decidida" --> exchange
+    exchange -- "solicitud.creada" --> qcreada
+    exchange -- "solicitud.decidida" --> qdecidida
+    qcreada --> notificaciones
+    qdecidida --> notificaciones
+    qcreada -. "NACK / TTL / delivery-limit" .-> dlx
+    qdecidida -. "NACK / TTL / delivery-limit" .-> dlx
+    dlx -- "solicitud.dead" --> dlq
+    dlq --> notificaciones
+    admin -. "AMQP admin" .-> mensajeria

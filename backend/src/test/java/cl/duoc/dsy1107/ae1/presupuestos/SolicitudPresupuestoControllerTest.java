@@ -6,9 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -20,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@RecordApplicationEvents
 class SolicitudPresupuestoControllerTest {
 
     private static final String NUEVA = """
@@ -27,6 +32,9 @@ class SolicitudPresupuestoControllerTest {
 
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    private ApplicationEvents eventos;
 
     private long crear() throws Exception {
         String respuesta = mvc.perform(post("/presupuestos")
@@ -93,6 +101,28 @@ class SolicitudPresupuestoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("APROBADA"))
                 .andExpect(jsonPath("$.comentarioAdmin").value("Ok presupuesto"));
+    }
+
+    @Test
+    @DisplayName("crear y decidir emiten un evento de dominio cada uno; editar no")
+    void eventosDeDominio() throws Exception {
+        long id = crear();
+        mvc.perform(put("/presupuestos/" + id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"titulo":"Otro","descripcion":"x","monto":10,"categoria":"OTRO"}"""))
+                .andExpect(status().isOk());
+        mvc.perform(post("/presupuestos/" + id + "/decision")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"estado":"APROBADA","comentario":"ok"}"""))
+                .andExpect(status().isOk());
+
+        assertThat(eventos.stream(SolicitudEvento.class))
+                .extracting(SolicitudEvento::tipo, SolicitudEvento::id, SolicitudEvento::estado)
+                .containsExactly(
+                        tuple(SolicitudEvento.Tipo.CREADA, id, EstadoSolicitud.PENDIENTE),
+                        tuple(SolicitudEvento.Tipo.DECIDIDA, id, EstadoSolicitud.APROBADA));
     }
 
     @Test

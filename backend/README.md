@@ -3,6 +3,8 @@
 Spring Boot detrás del API Gateway. Expone `/presupuestos` (CRUD + decisión admin).
 La autenticación JWT y los scopes (`presupuestos/read|write|decidir`) los exige el Gateway; este servicio no valida el token.
 
+Tras crear o decidir una solicitud publica eventos AMQP (`solicitud.creada` / `solicitud.decidida`) vía `SolicitudEventoPublisher`. Detalle de topología y consumidores: `README.md` en la raíz.
+
 ## API
 
 | Método | Ruta | Qué hace |

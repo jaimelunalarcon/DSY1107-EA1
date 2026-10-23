@@ -25,6 +25,24 @@ spring:
   flyway:
     enabled: true
 
+  # Cluster local de docker/rabbitmq (3 nodos). En ECS se pisa con RABBITMQ_*.
+  rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES:localhost:5672,localhost:5673,localhost:5674}
+    address-shuffle-mode: random
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:admin123}
+    connection-timeout: 3s
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+# Topologia de mensajeria (EP2). Debe coincidir con notificaciones-ms.
+mensajeria:
+  habilitada: ${MENSAJERIA_HABILITADA:true}
+  exchange: presupuestos.exchange
+  routing-keys:
+    solicitud-creada: solicitud.creada
+    solicitud-decidida: solicitud.decidida
+
 server:
   port: 8080
   error:
@@ -38,8 +56,12 @@ backend:
       - http://localhost:4200
       - http://localhost:5173
 
-# /actuator/health es el health check de la task ECS.
+# /actuator/health es el health check de la task ECS. RabbitMQ no entra en el
+# health: si el broker cae, el API de presupuestos debe seguir sano.
 management:
+  health:
+    rabbit:
+      enabled: false
   endpoints:
     web:
       exposure:

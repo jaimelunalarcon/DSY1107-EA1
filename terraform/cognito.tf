@@ -26,8 +26,8 @@ resource "aws_cognito_user_pool" "pool" {
 }
 
 resource "aws_cognito_user_pool_domain" "hosted_ui" {
-  domain       = "dsy1107-${var.estudiante}"
-  user_pool_id = aws_cognito_user_pool.pool.id
+  domain                = "dsy1107-${var.estudiante}"
+  user_pool_id          = aws_cognito_user_pool.pool.id
   managed_login_version = 1
 }
 
@@ -56,7 +56,7 @@ resource "aws_cognito_user_pool_client" "spa" {
     "${local.url_amplify}/",
   ]
 
-  explicit_auth_flows = ["ALLOW_USER_PASSWORD_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
+  explicit_auth_flows   = ["ALLOW_USER_PASSWORD_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
   access_token_validity = 60
   id_token_validity     = 60
   token_validity_units {

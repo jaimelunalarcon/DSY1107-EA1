@@ -145,8 +145,24 @@ resource "aws_security_group" "tarea" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "notificaciones-ms (control de listeners / health)"
+    from_port   = 8081
+    to_port     = 8081
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "rabbit-admin-ms (API REST de administracion)"
+    from_port   = 8082
+    to_port     = 8082
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
-    description = "Salida para bajar la imagen de ECR y alcanzar RDS/AWS"
+    description = "Salida para ECR, RDS, RabbitMQ EC2 y APIs AWS"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -229,7 +245,14 @@ resource "aws_ecs_task_definition" "backend" {
           value = "jdbc:postgresql://${aws_db_instance.postgres.endpoint}/${aws_db_instance.postgres.db_name}?sslmode=require"
         },
         { name = "SPRING_DATASOURCE_USERNAME", value = aws_db_instance.postgres.username },
-        { name = "SPRING_DATASOURCE_PASSWORD", value = var.db_password }
+        { name = "SPRING_DATASOURCE_PASSWORD", value = var.db_password },
+
+        # RabbitMQ en EC2 (rabbitmq_ec2.tf). Sin broker el API sigue; el publisher
+        # solo loguea el error. MENSAJERIA_HABILITADA=true publica eventos.
+        { name = "MENSAJERIA_HABILITADA", value = "true" },
+        { name = "RABBITMQ_ADDRESSES", value = local.rabbitmq_addresses },
+        { name = "RABBITMQ_USER", value = var.rabbitmq_user },
+        { name = "RABBITMQ_PASSWORD", value = var.rabbitmq_password }
       ]
 
       # Sin balanceador no hay target group que vigile la salud, asi que la

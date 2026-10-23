@@ -1,5 +1,6 @@
 package cl.duoc.dsy1107.ae1.presupuestos;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,10 +15,13 @@ public class SolicitudPresupuestoService {
 
     private final SolicitudPresupuestoRepository repositorio;
     private final Clock reloj;
+    private final ApplicationEventPublisher eventos;
 
-    public SolicitudPresupuestoService(SolicitudPresupuestoRepository repositorio, Clock reloj) {
+    public SolicitudPresupuestoService(
+            SolicitudPresupuestoRepository repositorio, Clock reloj, ApplicationEventPublisher eventos) {
         this.repositorio = repositorio;
         this.reloj = reloj;
+        this.eventos = eventos;
     }
 
     @Transactional(readOnly = true)
@@ -38,9 +42,11 @@ public class SolicitudPresupuestoService {
             int monto,
             String solicitante,
             CategoriaSolicitud categoria) {
-        return repositorio.save(
+        SolicitudPresupuesto creada = repositorio.save(
                 new SolicitudPresupuesto(
                         titulo, descripcion, monto, solicitante, categoria, reloj.instant()));
+        eventos.publishEvent(SolicitudEvento.de(SolicitudEvento.Tipo.CREADA, creada, creada.getCreadoEn()));
+        return creada;
     }
 
     /** Solo mientras esta PENDIENTE (CRUD del trabajador). */
@@ -77,6 +83,7 @@ public class SolicitudPresupuestoService {
         SolicitudPresupuesto s = obtener(id);
         exigirPendiente(s, "decidir");
         s.decidir(nuevoEstado, comentario, reloj.instant());
+        eventos.publishEvent(SolicitudEvento.de(SolicitudEvento.Tipo.DECIDIDA, s, s.getDecididoEn()));
         return s;
     }
 

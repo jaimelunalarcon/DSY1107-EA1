@@ -1,0 +1,66 @@
+# Cluster RabbitMQ de 3 nodos para la EP2 (colas quorum replicadas en los 3).
+#   docker compose -f docker/rabbitmq/docker-compose.yml up -d --wait
+#   UI: http://localhost:15672  (admin / admin123)
+#
+# Proyecto y contenedores con prefijo propio para no chocar con otros clusters
+# locales; los hostnames (rabbitmq-N) son los que usa rabbitmq.conf.
+
+name: dsy1107-ep2
+
+x-nodo: &nodo
+  image: rabbitmq:4.2-management
+  environment:
+    RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+    RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin123}
+    RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:-dsy1107_ep2_cookie}
+  healthcheck:
+    test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+    interval: 10s
+    timeout: 5s
+    retries: 10
+    start_period: 30s
+  networks:
+    - rabbitmq_cluster
+
+services:
+  rabbitmq-1:
+    <<: *nodo
+    container_name: ep2-rabbitmq-1
+    hostname: rabbitmq-1
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data_1:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+
+  rabbitmq-2:
+    <<: *nodo
+    container_name: ep2-rabbitmq-2
+    hostname: rabbitmq-2
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - rabbitmq_data_2:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+
+  rabbitmq-3:
+    <<: *nodo
+    container_name: ep2-rabbitmq-3
+    hostname: rabbitmq-3
+    ports:
+      - "5674:5672"
+      - "15674:15672"
+    volumes:
+      - rabbitmq_data_3:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+
+networks:
+  rabbitmq_cluster:
+    driver: bridge
+
+volumes:
+  rabbitmq_data_1:
+  rabbitmq_data_2:
+  rabbitmq_data_3:

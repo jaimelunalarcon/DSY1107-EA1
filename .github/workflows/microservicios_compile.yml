@@ -1,0 +1,36 @@
+name: Microservicios RabbitMQ Compile
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'notificaciones-ms/**'
+      - 'rabbit-admin-ms/**'
+      - '.github/workflows/microservicios_compile.yml'
+
+jobs:
+  construir:
+    name: Build ${{ matrix.modulo }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        modulo: [notificaciones-ms, rabbit-admin-ms]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # Las pruebas no necesitan broker: los listeners se prueban con un Channel simulado.
+      - name: Build + tests
+        working-directory: ${{ matrix.modulo }}
+        run: ./mvnw --batch-mode --no-transfer-progress verify

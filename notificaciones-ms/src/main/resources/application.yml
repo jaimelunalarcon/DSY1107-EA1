@@ -1,0 +1,68 @@
+# =============================================================================
+# DSY1107 - EP2 - notificaciones-ms
+#
+# Consume los eventos que publica el backend de presupuestos y los procesa en
+# dos dominios: notificaciones (solicitud creada) y tickets (solicitud decidida).
+# Los mensajes no se guardan en BD: si fallan terminan en la DLQ y en el log.
+# =============================================================================
+
+spring:
+  application:
+    name: notificaciones-ms
+
+  rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES:localhost:5672,localhost:5673,localhost:5674}
+    address-shuffle-mode: random
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:admin123}
+    listener:
+      simple:
+        # Cada listener confirma con basicAck / basicNack (ver ManejoDeFallos).
+        acknowledge-mode: manual
+        # Un mensaje sin confirmar por consumidor: reparto justo y reintentos ordenados.
+        prefetch: 1
+
+# Topologia (unica fuente de nombres). exchange y routing keys deben coincidir
+# con el bloque "mensajeria" del backend.
+mensajeria:
+  exchange: presupuestos.exchange
+  dead-letter-exchange: presupuestos.dlx
+  routing-keys:
+    solicitud-creada: solicitud.creada
+    solicitud-decidida: solicitud.decidida
+    dead-letter: solicitud.dead
+  colas:
+    solicitud-creada: presupuestos.notificaciones.solicitud-creada
+    solicitud-decidida: presupuestos.tickets.solicitud-decidida
+    dead-letter: presupuestos.dlq
+  # Mensajes que nadie consume en 1 hora expiran y pasan a la DLQ.
+  ttl-ms: 3600000
+  # La DLQ guarda los muertos 7 dias para revisarlos.
+  dlq-ttl-ms: 604800000
+  reintentos:
+    # Intentos que hace el consumidor ante un error recuperable antes de mandar a DLQ.
+    max-intentos: 3
+    # Red de seguridad del broker (x-delivery-limit de la cola quorum).
+    delivery-limit: 5
+
+# Marcas en el titulo de la solicitud para forzar fallos en la demo.
+notificaciones:
+  simulacion:
+    falla-temporal: "#temporal"
+    falla-permanente: "#permanente"
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    cl.duoc.dsy1107.notificaciones: DEBUG

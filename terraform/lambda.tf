@@ -9,15 +9,15 @@ data "archive_file" "user_token_ms" {
 }
 
 resource "aws_lambda_function" "user_token_ms" {
-  function_name = "user-token-ms-${var.estudiante}"
-  description   = "Pre token generation V2: agrega scopes segun el grupo del usuario"
-  role          = "arn:aws:iam::${data.aws_caller_identity.actual.account_id}:role/LabRole"
-  runtime       = "nodejs22.x"
-  handler       = "index.handler"
+  function_name    = "user-token-ms-${var.estudiante}"
+  description      = "Pre token generation V2: agrega scopes segun el grupo del usuario"
+  role             = "arn:aws:iam::${data.aws_caller_identity.actual.account_id}:role/LabRole"
+  runtime          = "nodejs22.x"
+  handler          = "index.handler"
   filename         = data.archive_file.user_token_ms.output_path
   source_code_hash = data.archive_file.user_token_ms.output_base64sha256
-  timeout     = 5
-  memory_size = 128
+  timeout          = 5
+  memory_size      = 128
 }
 
 resource "aws_lambda_permission" "cognito" {

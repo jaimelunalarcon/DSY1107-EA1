@@ -1,7 +1,7 @@
 variable "estudiante" {
   type        = string
   description = "Identificador único del alumno o grupo"
-  default     = "grupo33"
+  default     = "grupo6"
 
   validation {
     condition     = can(regex("^[a-z0-9-]{3,20}$", var.estudiante))

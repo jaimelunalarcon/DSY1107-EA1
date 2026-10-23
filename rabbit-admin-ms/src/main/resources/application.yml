@@ -1,0 +1,39 @@
+# =============================================================================
+# DSY1107 - EP2 - rabbit-admin-ms
+#
+# API REST para crear / consultar / eliminar colas, exchanges y bindings en el
+# cluster RabbitMQ. No consume ni publica mensajes de negocio.
+# =============================================================================
+
+spring:
+  application:
+    name: rabbit-admin-ms
+
+  rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES:localhost:5672,localhost:5673,localhost:5674}
+    address-shuffle-mode: random
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:admin123}
+    connection-timeout: 3s
+
+rabbit-admin:
+  # Recursos de negocio (backend / notificaciones-ms) que esta API no puede
+  # borrar, vaciar ni redeclarar. Si se pueden crear bindings hacia ellos.
+  prefijos-protegidos:
+    - presupuestos.
+  # Valores por defecto al crear una cola quorum sin delivery-limit explicito.
+  cola-por-defecto:
+    delivery-limit: 5
+
+server:
+  port: 8082
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+logging:
+  level:
+    cl.duoc.dsy1107.rabbitadmin: DEBUG

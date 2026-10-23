@@ -58,35 +58,55 @@ export async function beginLogin(): Promise<void> {
   const authorizeUrl = `${cognitoConfig.domain}/oauth2/authorize?${params.toString()}`;
 
   // PASO 4 — Cognito (no React) redirige al usuario al prompt de login Hosted UI.
-  // El browser deja esta SPA y muestra https://dsy1107-grupo33.auth.us-east-1.amazoncognito.com/...
+  // El browser deja esta SPA y muestra https://dsy1107-grupo6.auth.us-east-1.amazoncognito.com/...
   window.location.assign(authorizeUrl);
 }
+
+/**
+ * En React Strict Mode (dev) el AuthProvider monta dos veces y el useEffect
+ * intentaba intercambiar el mismo ?code= dos veces. Cognito solo permite un
+ * uso → el segundo falla con invalid_grant. Esta promesa se comparte entre
+ * llamadas concurrentes para hacer un solo POST /oauth2/token.
+ */
+let loginCallbackPromise: Promise<AuthTokens | null> | null = null;
 
 /**
  * PASO 6 — Cognito redirige a redirect_uri con ?code=...&state=...
  * Esta función se llama al cargar la SPA si la URL trae el code.
  */
-export async function completeLoginFromCallback(): Promise<AuthTokens | null> {
+export function completeLoginFromCallback(): Promise<AuthTokens | null> {
+  if (loginCallbackPromise) {
+    return loginCallbackPromise;
+  }
+
   const params = new URLSearchParams(window.location.search);
   const error = params.get("error");
   const errorDescription = params.get("error_description");
 
   if (error) {
-    throw new Error(errorDescription || error);
+    return Promise.reject(new Error(errorDescription || error));
   }
 
   const code = params.get("code");
   const state = params.get("state");
-  if (!code) return null;
+  if (!code) {
+    return Promise.resolve(null);
+  }
 
   const savedState = sessionStorage.getItem(OAUTH_STATE_KEY);
   if (!state || state !== savedState) {
-    throw new Error("El parámetro state no coincide. Posible CSRF.");
+    return Promise.reject(new Error("El parámetro state no coincide. Posible CSRF."));
   }
 
-  const tokens = await exchangeCodeForTokens(code);
+  // Sacar ?code= de la barra ya: un remount o F5 no reutiliza el code consumido.
   window.history.replaceState({}, document.title, getCognitoConfig().redirectUri);
-  return tokens;
+
+  loginCallbackPromise = exchangeCodeForTokens(code).catch((err) => {
+    loginCallbackPromise = null;
+    throw err;
+  });
+
+  return loginCallbackPromise;
 }
 
 /**
